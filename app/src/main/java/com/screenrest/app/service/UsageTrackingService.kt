@@ -129,7 +129,7 @@ class UsageTrackingService : LifecycleService() {
             TrackingMode.CONTINUOUS -> {
                 usageCalculator.getContinuousUsageSinceTimestamp(trackingStartTimestamp)
             }
-            TrackingMode.CUMULATIVE -> {
+            TrackingMode.CUMULATIVE_DAILY -> {
                 cumulativeUsageToday
             }
         }
@@ -137,7 +137,7 @@ class UsageTrackingService : LifecycleService() {
     
     private fun checkDailyReset(breakConfig: BreakConfig) {
         val currentDay = getCurrentDay()
-        if (currentDay != lastDayCheck && breakConfig.trackingMode == TrackingMode.CUMULATIVE) {
+        if (currentDay != lastDayCheck && breakConfig.trackingMode == TrackingMode.CUMULATIVE_DAILY) {
             cumulativeUsageToday = 0L
             lastDayCheck = currentDay
         }
@@ -182,7 +182,7 @@ class UsageTrackingService : LifecycleService() {
             TrackingMode.CONTINUOUS -> {
                 trackingStartTimestamp = System.currentTimeMillis()
             }
-            TrackingMode.CUMULATIVE -> {
+            TrackingMode.CUMULATIVE_DAILY -> {
                 cumulativeUsageToday = 0L
             }
         }
