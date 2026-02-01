@@ -26,33 +26,30 @@ fun NavGraph(
         startDestination = startDestination
     ) {
         composable(Screen.Onboarding.route) {
-            // Onboarding screen placeholder - will be implemented in Part 3
-            androidx.compose.foundation.layout.Box(
-                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                androidx.compose.material3.Text("Onboarding Screen - Coming in Part 3")
-            }
+            com.screenrest.app.presentation.onboarding.OnboardingScreen(
+                onComplete = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                    }
+                }
+            )
         }
         
         composable(Screen.Home.route) {
-            // Home screen placeholder - will be implemented in Part 3
-            androidx.compose.foundation.layout.Box(
-                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                androidx.compose.material3.Text("Home Screen - Coming in Part 3")
-            }
+            com.screenrest.app.presentation.main.HomeScreen(
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
+                }
+            )
         }
         
         composable(Screen.Settings.route) {
-            // Settings screen placeholder - will be implemented in Part 3
-            androidx.compose.foundation.layout.Box(
-                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                androidx.compose.material3.Text("Settings Screen - Coming in Part 3")
-            }
+            com.screenrest.app.presentation.settings.SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCustomMessages = {
+                    navController.navigate(Screen.CustomMessages.route)
+                }
+            )
         }
         
         composable(Screen.BreakConfig.route) {
@@ -66,13 +63,9 @@ fun NavGraph(
         }
         
         composable(Screen.CustomMessages.route) {
-            // Custom messages screen placeholder - will be implemented in Part 3
-            androidx.compose.foundation.layout.Box(
-                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                androidx.compose.material3.Text("Custom Messages Screen - Coming in Part 3")
-            }
+            com.screenrest.app.presentation.settings.messages.CustomMessagesScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
         
         composable(Screen.Permissions.route) {
