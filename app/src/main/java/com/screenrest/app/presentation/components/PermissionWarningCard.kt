@@ -10,7 +10,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.screenrest.app.service.PermissionNavigator
+import com.screenrest.app.util.openAccessibilitySettings
+import com.screenrest.app.util.openNotificationSettings
+import com.screenrest.app.util.openOverlaySettings
+import com.screenrest.app.util.openUsageAccessSettings
 
 @Composable
 fun PermissionWarningCard(
@@ -64,10 +67,10 @@ fun PermissionWarningCard(
                 OutlinedButton(
                     onClick = {
                         when (permissionType) {
-                            "usageStats" -> PermissionNavigator.openUsageAccessSettings(context)
-                            "overlay" -> PermissionNavigator.openOverlaySettings(context)
-                            "accessibility" -> PermissionNavigator.openAccessibilitySettings(context)
-                            "notification" -> PermissionNavigator.openNotificationSettings(context)
+                            "usageStats" -> context.openUsageAccessSettings()
+                            "overlay" -> context.openOverlaySettings()
+                            "accessibility" -> context.openAccessibilitySettings()
+                            "notification" -> context.openNotificationSettings()
                         }
                     },
                     colors = ButtonDefaults.outlinedButtonColors(

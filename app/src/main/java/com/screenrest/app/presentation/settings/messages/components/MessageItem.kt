@@ -42,9 +42,9 @@ fun MessageItem(
         )
     }
     
-    val dismissState = rememberDismissState(
+    val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
-            if (it == DismissValue.DismissedToStart || it == DismissValue.DismissedToEnd) {
+            if (it == SwipeToDismissBoxValue.StartToEnd || it == SwipeToDismissBoxValue.EndToStart) {
                 showDeleteDialog = true
                 false
             } else {
@@ -84,14 +84,14 @@ fun MessageItem(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = message.message,
+                            text = message.text,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         
-                        if (message.message.length > 100) {
+                        if (message.text.length > 100) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "${message.message.length} characters",
+                                text = "${message.text.length} characters",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

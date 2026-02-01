@@ -1,3 +1,3 @@
 package com.screenrest.app.domain.model
 
-enum class TrackingMode { CONTINUOUS, CUMULATIVE }
+enum class TrackingMode { CONTINUOUS, CUMULATIVE_DAILY }

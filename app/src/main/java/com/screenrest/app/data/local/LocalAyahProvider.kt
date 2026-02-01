@@ -5,6 +5,7 @@ import com.screenrest.app.R
 import com.screenrest.app.domain.model.Ayah
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
@@ -20,7 +21,7 @@ data class AyahDto(
 
 @Singleton
 class LocalAyahProvider @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private var cachedAyahs: List<Ayah>? = null

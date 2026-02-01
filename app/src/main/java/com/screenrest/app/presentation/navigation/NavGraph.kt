@@ -1,8 +1,13 @@
 package com.screenrest.app.presentation.navigation
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Text
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -54,11 +59,11 @@ fun NavGraph(
         
         composable(Screen.BreakConfig.route) {
             // Break config screen placeholder - will be implemented in Part 3
-            androidx.compose.foundation.layout.Box(
-                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                androidx.compose.material3.Text("Break Config Screen - Coming in Part 3")
+                Text("Break Config Screen - Coming in Part 3")
             }
         }
         
@@ -70,21 +75,21 @@ fun NavGraph(
         
         composable(Screen.Permissions.route) {
             // Permissions screen placeholder - will be implemented in Part 3
-            androidx.compose.foundation.layout.Box(
-                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                androidx.compose.material3.Text("Permissions Screen - Coming in Part 3")
+                Text("Permissions Screen - Coming in Part 3")
             }
         }
         
         composable(Screen.About.route) {
             // About screen placeholder - will be implemented in Part 3
-            androidx.compose.foundation.layout.Box(
-                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                androidx.compose.material3.Text("About Screen - Coming in Part 3")
+                Text("About Screen - Coming in Part 3")
             }
         }
     }
