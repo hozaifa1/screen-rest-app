@@ -151,7 +151,7 @@ This is a personal project, but suggestions and feedback are welcome!
 
 ## 📞 Support
 
-For issues or questions, please open an issue in the repository.
+For issues or questions, please open an issue in the repository. You can also contact me at [my email](mailto:20hozaifa02@gmail.com).
 
 ---
 

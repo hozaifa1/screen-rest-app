@@ -3,15 +3,35 @@ package com.screenrest.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.navigation.compose.rememberNavController
+import com.screenrest.app.data.local.datastore.SettingsDataStore
+import com.screenrest.app.presentation.navigation.NavGraph
+import com.screenrest.app.presentation.theme.ScreenRestTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    
+    @Inject
+    lateinit var settingsDataStore: SettingsDataStore
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Text("ScreenRest")
+            val themeMode by settingsDataStore.themeMode.collectAsState(
+                initial = com.screenrest.app.domain.model.ThemeMode.SYSTEM
+            )
+            val navController = rememberNavController()
+            
+            ScreenRestTheme(themeMode = themeMode) {
+                NavGraph(
+                    navController = navController,
+                    settingsDataStore = settingsDataStore
+                )
+            }
         }
     }
 }

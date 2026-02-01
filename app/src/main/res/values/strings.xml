@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ScreenRest</string>
+    <string name="accessibility_description">ScreenRest uses this to prevent bypassing breaks. When active, you cannot exit using home or recent apps. No data is collected.</string>
 </resources>
