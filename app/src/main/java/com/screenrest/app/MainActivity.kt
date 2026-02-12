@@ -24,9 +24,12 @@ class MainActivity : ComponentActivity() {
             val themeMode by settingsDataStore.themeMode.collectAsState(
                 initial = com.screenrest.app.domain.model.ThemeMode.SYSTEM
             )
+            val themeColor by settingsDataStore.themeColor.collectAsState(
+                initial = com.screenrest.app.domain.model.ThemeColor.TEAL
+            )
             val navController = rememberNavController()
             
-            ScreenRestTheme(themeMode = themeMode) {
+            ScreenRestTheme(themeMode = themeMode, themeColor = themeColor) {
                 NavGraph(
                     navController = navController,
                     settingsDataStore = settingsDataStore

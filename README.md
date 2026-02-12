@@ -1,38 +1,55 @@
-# ScreenRest
+# ScreenRest — Mobile (Android)
 
-**A mindful screen break reminder app for Android**
+> **Take breaks. Protect your eyes. Stay healthy.**
 
-ScreenRest helps you maintain healthy screen usage habits by tracking your device usage and providing timely break reminders with inspirational Quranic verses or custom messages.
+ScreenRest is an Android app that helps you build healthier screen habits. It runs silently in the background, tracks how long you've been using your phone, and gently reminds you to take breaks by displaying a fullscreen overlay with a Quranic verse or a custom message.
 
-## 📱 Features
+## What It Does
 
-- **Intelligent Usage Tracking**: Monitor screen time with continuous or cumulative tracking modes
-- **Customizable Break Intervals**: Set usage thresholds (1-240 minutes) and break durations (10-300 seconds)
-- **Inspirational Messages**: Display random Quranic verses (Arabic + English) or custom messages during breaks
-- **Location-Based Reminders**: Optional geofencing to activate breaks only at specific locations
-- **Flexible Enforcement Levels**: Multiple permission-based enforcement modes (FULL, STANDARD, BASIC, NONE)
-- **Modern Material Design 3 UI**: Clean, intuitive interface with theme support (System/Light/Dark)
+- **Tracks your screen time** — Monitors how long you've been actively using your phone, either per-session (continuous) or across all sessions in a day (cumulative).
+- **Reminds you to take breaks** — When you hit your configured usage threshold (e.g. 20 minutes), a fullscreen break screen appears for a set duration (e.g. 30 seconds).
+- **Displays Quranic verses** — During breaks, a random ayah is fetched from the [Al Quran Cloud API](https://alquran.cloud/api) and displayed in both Arabic and English (Mohsin Khan/Hilali translation). If offline, a curated local collection is used as fallback.
+- **Supports custom messages** — You can add your own break messages. When both are enabled, the app randomly picks between a Quran ayah and a custom message.
+- **Location-aware** — Optionally set a geofence so breaks only activate when you're at a specific location (e.g. your office or home).
+- **Multiple enforcement levels** — Depending on which permissions you grant, the app adapts its enforcement: FULL (overlay + accessibility blocking), STANDARD (overlay only), BASIC (notification only), or NONE.
+- **Guided onboarding** — A step-by-step setup walks you through granting the necessary permissions.
+- **Theme support** — Light, dark, or system-default theme.
+- **Material Design 3** — Clean, modern UI built with Jetpack Compose.
 
-## 🏗️ Architecture
+## Required Permissions
 
-ScreenRest follows **Clean Architecture** principles with clear separation of concerns:
+| Permission | Why It's Needed |
+|---|---|
+| **Usage Stats Access** | Track how long you've been using your phone |
+| **Display Over Other Apps** | Show the fullscreen break overlay |
+| **Accessibility Service** (optional) | Enhanced app blocking during breaks |
+| **Notifications** (optional) | Break reminders and status updates |
+| **Location** (optional) | Geofenced break triggers |
 
-### Layers
-- **Presentation Layer**: Jetpack Compose UI with MVVM pattern
-- **Domain Layer**: Business logic, use cases, and domain models
-- **Data Layer**: Repositories, local database (Room), remote API (Retrofit), and preferences (DataStore)
+---
 
-### Key Technologies
-- **Kotlin**: 100% Kotlin codebase
-- **Jetpack Compose**: Modern declarative UI toolkit
-- **Hilt**: Dependency injection
-- **Room**: Local database for custom messages
-- **DataStore**: Type-safe preferences storage
-- **Retrofit + OkHttp**: Network layer for Quran API
-- **Kotlinx Serialization**: JSON parsing
-- **Coroutines + Flow**: Asynchronous programming
+## Technical Details
 
-## 📦 Project Structure
+### Tech Stack
+
+- **Kotlin** — 100% Kotlin codebase
+- **Jetpack Compose** — Declarative UI
+- **Hilt** — Dependency injection
+- **Room** — Local SQLite database for custom messages
+- **DataStore** — Type-safe preferences
+- **Retrofit + OkHttp** — Network layer for Quran API
+- **Kotlinx Serialization** — JSON parsing
+- **Coroutines + Flow** — Async programming and reactive state
+
+### Architecture
+
+The app follows **Clean Architecture** with three layers:
+
+- **Presentation** — Jetpack Compose screens + ViewModels (MVVM)
+- **Domain** — Use cases and domain models (no framework dependencies)
+- **Data** — Repository implementations, Room DB, DataStore, Retrofit API
+
+### Project Structure
 
 ```
 app/src/main/java/com/screenrest/app/
@@ -43,116 +60,53 @@ app/src/main/java/com/screenrest/app/
 │   ├── remote/               # Retrofit API services and DTOs
 │   └── repository/           # Repository implementations
 ├── domain/
-│   ├── model/                # Domain models (BreakConfig, Ayah, etc.)
-│   └── usecase/              # Business logic use cases
+│   ├── model/                # BreakConfig, Ayah, EnforcementLevel, etc.
+│   └── usecase/              # GetRandomDisplayMessageUseCase, etc.
 ├── presentation/
-│   ├── navigation/           # Navigation graph
-│   ├── main/                 # Main screen
+│   ├── main/                 # Home screen (start/pause tracking)
 │   ├── settings/             # Settings screen
-│   ├── block/                # Break/block screen
-│   ├── onboarding/           # Onboarding flow
+│   ├── block/                # Fullscreen break overlay
+│   ├── onboarding/           # Permission grant flow
 │   ├── components/           # Reusable UI components
-│   └── theme/                # Material 3 theme
-├── service/                  # Background services, permission helpers
+│   ├── navigation/           # Navigation graph
+│   └── theme/                # Material 3 theme definitions
+├── service/                  # UsageTrackingService, ServiceController
 ├── receiver/                 # Broadcast receivers
-└── di/                       # Hilt dependency injection modules
+└── di/                       # Hilt modules
 ```
 
-## 🚀 Getting Started
+### Key Domain Models
 
-### Prerequisites
-- **JDK 17** or higher
-- **Android SDK** (compileSdk 34, minSdk 26)
-- **Android Studio** Hedgehog or later (recommended)
+- **BreakConfig** — User configuration: threshold, duration, tracking mode, location
+- **TrackingMode** — `CONTINUOUS` (per-session) or `CUMULATIVE` (total daily)
+- **EnforcementLevel** — `FULL`, `STANDARD`, `BASIC`, or `NONE`
+- **Ayah** — Arabic text, English translation, surah info
+- **PermissionStatus** — Current state of all required permissions
 
-### Installation
+### Building
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd screenrest/android
-   ```
+**Prerequisites:** JDK 17+, Android SDK (compileSdk 34, minSdk 26)
 
-2. **Build the project**
-   ```bash
-   ./gradlew build
-   ```
+```bash
+git clone https://github.com/hozaifa1/screen-rest-app.git
+cd screen-rest-app/android
 
-3. **Run on device/emulator**
-   ```bash
-   ./gradlew installDebug
-   ```
+# Debug build
+./gradlew assembleDebug
 
-## 🔑 Required Permissions
-
-ScreenRest requires the following permissions for full functionality:
-
-### Critical Permissions
-- **Usage Stats Access**: Track app usage time
-- **Display Over Other Apps**: Show break screen overlay
-
-### Optional Permissions
-- **Accessibility Service**: Enhanced app blocking
-- **Notifications**: Break reminders
-- **Location**: Geofenced break triggers
-- **Background Location**: Location tracking while app is in background
-
-## 📚 Domain Models
-
-### Core Models
-- **BreakConfig**: User configuration (threshold, duration, tracking mode, location)
-- **TrackingMode**: CONTINUOUS (per-session) or CUMULATIVE (total daily)
-- **ThemeMode**: SYSTEM, LIGHT, or DARK
-- **DisplayMessage**: Custom text or Quranic verse
-- **Ayah**: Arabic text, English translation, surah info
-- **PermissionStatus**: Current state of all permissions
-- **EnforcementLevel**: FULL, STANDARD, BASIC, or NONE
-
-## 🗄️ Data Sources
-
-### Local
-- **Room Database**: Stores custom break messages
-- **DataStore Preferences**: App settings and configuration
-- **Local Ayah JSON**: Fallback Quranic verses (~20 curated ayahs)
-
-### Remote
-- **Quran API**: [alquran.cloud](https://alquran.cloud/api) for dynamic verse fetching
-
-## 🧪 Build Variants
-
-- **Debug**: Development build with logging enabled
-- **Release**: Production build with ProGuard/R8 optimization
-
-## 📄 License
-
-```
-MIT License
-
-Copyright (c) 2026 ScreenRest
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# Install on connected device
+./gradlew installDebug
 ```
 
-## 🤝 Contributing
+### Build Variants
 
-This is a personal project, but suggestions and feedback are welcome!
+- **Debug** — Development build with logging
+- **Release** — Production build with ProGuard/R8 optimization
 
-## 📞 Support
+## License
 
-For issues or questions, please open an issue in the repository. You can also contact me at [my email](mailto:20hozaifa02@gmail.com).
+MIT License. See [LICENSE](LICENSE) for details.
 
----
+## Contact
 
-**Built with ❤️ using Kotlin & Jetpack Compose**
+For issues or questions, open an issue or reach out at [20hozaifa02@gmail.com](mailto:20hozaifa02@gmail.com).
