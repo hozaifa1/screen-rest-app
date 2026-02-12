@@ -4,6 +4,8 @@ import com.screenrest.app.data.repository.AyahRepository
 import com.screenrest.app.data.repository.AyahRepositoryImpl
 import com.screenrest.app.data.repository.CustomMessageRepository
 import com.screenrest.app.data.repository.CustomMessageRepositoryImpl
+import com.screenrest.app.data.repository.IslamicReminderRepository
+import com.screenrest.app.data.repository.IslamicReminderRepositoryImpl
 import com.screenrest.app.data.repository.SettingsRepository
 import com.screenrest.app.data.repository.SettingsRepositoryImpl
 import dagger.Binds
@@ -33,4 +35,10 @@ abstract class RepositoryModule {
     abstract fun bindAyahRepository(
         ayahRepositoryImpl: AyahRepositoryImpl
     ): AyahRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindIslamicReminderRepository(
+        islamicReminderRepositoryImpl: IslamicReminderRepositoryImpl
+    ): IslamicReminderRepository
 }

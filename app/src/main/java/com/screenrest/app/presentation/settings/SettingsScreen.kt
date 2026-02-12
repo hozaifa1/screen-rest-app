@@ -43,7 +43,8 @@ import kotlin.math.abs
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToCustomMessages: () -> Unit
+    onNavigateToCustomMessages: () -> Unit,
+    onNavigateToIslamicReminders: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showTimerDialog by remember { mutableStateOf(false) }
@@ -116,7 +117,8 @@ fun SettingsScreen(
                 islamicRemindersEnabled = uiState.breakConfig.islamicRemindersEnabled,
                 onQuranMessagesToggle = { viewModel.updateQuranMessagesEnabled(it) },
                 onIslamicRemindersToggle = { viewModel.updateIslamicRemindersEnabled(it) },
-                onNavigateToCustomMessages = onNavigateToCustomMessages
+                onNavigateToCustomMessages = onNavigateToCustomMessages,
+                onNavigateToIslamicReminders = onNavigateToIslamicReminders
             )
 
             // Appearance section
@@ -454,7 +456,8 @@ private fun MessagesCard(
     islamicRemindersEnabled: Boolean,
     onQuranMessagesToggle: (Boolean) -> Unit,
     onIslamicRemindersToggle: (Boolean) -> Unit,
-    onNavigateToCustomMessages: () -> Unit
+    onNavigateToCustomMessages: () -> Unit,
+    onNavigateToIslamicReminders: () -> Unit
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
@@ -511,6 +514,27 @@ private fun MessagesCard(
                 Switch(
                     checked = islamicRemindersEnabled,
                     onCheckedChange = onIslamicRemindersToggle
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onNavigateToIslamicReminders() }
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Edit Islamic Reminders",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 

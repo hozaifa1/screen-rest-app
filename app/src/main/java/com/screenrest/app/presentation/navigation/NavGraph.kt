@@ -53,6 +53,9 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToCustomMessages = {
                     navController.navigate(Screen.CustomMessages.route)
+                },
+                onNavigateToIslamicReminders = {
+                    navController.navigate(Screen.IslamicReminders.route)
                 }
             )
         }
@@ -69,6 +72,12 @@ fun NavGraph(
         
         composable(Screen.CustomMessages.route) {
             com.screenrest.app.presentation.settings.messages.CustomMessagesScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.IslamicReminders.route) {
+            com.screenrest.app.presentation.settings.reminders.IslamicRemindersScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

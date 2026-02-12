@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.screenrest.app.data.local.database.AppDatabase
 import com.screenrest.app.data.local.database.dao.CustomMessageDao
+import com.screenrest.app.data.local.database.dao.IslamicReminderDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,12 +25,18 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "screenrest_database"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
     @Singleton
     fun provideCustomMessageDao(database: AppDatabase): CustomMessageDao {
         return database.customMessageDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideIslamicReminderDao(database: AppDatabase): IslamicReminderDao {
+        return database.islamicReminderDao()
     }
 }
