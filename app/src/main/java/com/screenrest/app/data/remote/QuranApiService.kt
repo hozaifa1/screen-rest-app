@@ -7,7 +7,7 @@ import retrofit2.http.Path
 
 interface QuranApiService {
     
-    @GET("ayah/{reference}/en.asad")
+    @GET("ayah/{reference}/en.hilali")
     suspend fun getAyahEnglish(@Path("reference") reference: String): AyahResponseDto
     
     @GET("ayah/{reference}/ar.alafasy")

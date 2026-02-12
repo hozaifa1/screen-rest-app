@@ -3,140 +3,140 @@
     "surahNumber": 1,
     "ayahNumber": 1,
     "arabicText": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-    "englishTranslation": "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
+    "englishTranslation": "In the Name of Allah, the Most Gracious, the Most Merciful.",
     "surahName": "Al-Fatihah"
-  },
-  {
-    "surahNumber": 2,
-    "ayahNumber": 255,
-    "arabicText": "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ",
-    "englishTranslation": "Allah - there is no deity except Him, the Ever-Living, the Sustainer of existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth.",
-    "surahName": "Al-Baqarah"
-  },
-  {
-    "surahNumber": 3,
-    "ayahNumber": 185,
-    "arabicText": "كُلُّ نَفْسٍ ذَائِقَةُ الْمَوْتِ ۗ وَإِنَّمَا تُوَفَّوْنَ أُجُورَكُمْ يَوْمَ الْقِيَامَةِ",
-    "englishTranslation": "Every soul will taste death, and you will only be given your full compensation on the Day of Resurrection.",
-    "surahName": "Ali 'Imran"
-  },
-  {
-    "surahNumber": 13,
-    "ayahNumber": 28,
-    "arabicText": "الَّذِينَ آمَنُوا وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ اللَّهِ ۗ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ",
-    "englishTranslation": "Those who have believed and whose hearts are assured by the remembrance of Allah. Unquestionably, by the remembrance of Allah hearts are assured.",
-    "surahName": "Ar-Ra'd"
   },
   {
     "surahNumber": 94,
     "ayahNumber": 5,
     "arabicText": "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا",
-    "englishTranslation": "For indeed, with hardship will be ease.",
+    "englishTranslation": "Verily, along with every hardship is relief.",
     "surahName": "Ash-Sharh"
   },
   {
     "surahNumber": 94,
     "ayahNumber": 6,
     "arabicText": "إِنَّ مَعَ الْعُسْرِ يُسْرًا",
-    "englishTranslation": "Indeed, with hardship will be ease.",
+    "englishTranslation": "Verily, along with every hardship is relief.",
     "surahName": "Ash-Sharh"
+  },
+  {
+    "surahNumber": 2,
+    "ayahNumber": 152,
+    "arabicText": "فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ",
+    "englishTranslation": "Therefore remember Me, I will remember you, and be grateful to Me and never be ungrateful to Me.",
+    "surahName": "Al-Baqarah"
   },
   {
     "surahNumber": 55,
     "ayahNumber": 13,
     "arabicText": "فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ",
-    "englishTranslation": "So which of the favors of your Lord would you deny?",
+    "englishTranslation": "Then which of the Blessings of your Lord will you both deny?",
     "surahName": "Ar-Rahman"
-  },
-  {
-    "surahNumber": 103,
-    "ayahNumber": 1,
-    "arabicText": "وَالْعَصْرِ",
-    "englishTranslation": "By time,",
-    "surahName": "Al-Asr"
-  },
-  {
-    "surahNumber": 103,
-    "ayahNumber": 2,
-    "arabicText": "إِنَّ الْإِنسَانَ لَفِي خُسْرٍ",
-    "englishTranslation": "Indeed, mankind is in loss,",
-    "surahName": "Al-Asr"
-  },
-  {
-    "surahNumber": 103,
-    "ayahNumber": 3,
-    "arabicText": "إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ",
-    "englishTranslation": "Except for those who have believed and done righteous deeds and advised each other to truth and advised each other to patience.",
-    "surahName": "Al-Asr"
   },
   {
     "surahNumber": 112,
     "ayahNumber": 1,
     "arabicText": "قُلْ هُوَ اللَّهُ أَحَدٌ",
-    "englishTranslation": "Say, He is Allah, the One.",
+    "englishTranslation": "Say: He is Allah, the One.",
     "surahName": "Al-Ikhlas"
   },
   {
     "surahNumber": 112,
     "ayahNumber": 2,
     "arabicText": "اللَّهُ الصَّمَدُ",
-    "englishTranslation": "Allah, the Eternal Refuge.",
+    "englishTranslation": "Allah, the Self-Sufficient Master, Whom all creatures need.",
     "surahName": "Al-Ikhlas"
   },
   {
-    "surahNumber": 17,
-    "ayahNumber": 82,
-    "arabicText": "وَنُنَزِّلُ مِنَ الْقُرْآنِ مَا هُوَ شِفَاءٌ وَرَحْمَةٌ لِّلْمُؤْمِنِينَ",
-    "englishTranslation": "And We send down of the Quran that which is healing and mercy for the believers.",
-    "surahName": "Al-Isra"
-  },
-  {
-    "surahNumber": 16,
-    "ayahNumber": 97,
-    "arabicText": "مَنْ عَمِلَ صَالِحًا مِّن ذَكَرٍ أَوْ أُنثَىٰ وَهُوَ مُؤْمِنٌ فَلَنُحْيِيَنَّهُ حَيَاةً طَيِّبَةً",
-    "englishTranslation": "Whoever does righteousness, whether male or female, while he is a believer - We will surely cause him to live a good life.",
-    "surahName": "An-Nahl"
-  },
-  {
-    "surahNumber": 39,
-    "ayahNumber": 53,
-    "arabicText": "قُلْ يَا عِبَادِيَ الَّذِينَ أَسْرَفُوا عَلَىٰ أَنفُسِهِمْ لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ ۚ إِنَّ اللَّهَ يَغْفِرُ الذُّنُوبَ جَمِيعًا",
-    "englishTranslation": "Say, O My servants who have transgressed against themselves, do not despair of the mercy of Allah. Indeed, Allah forgives all sins.",
-    "surahName": "Az-Zumar"
-  },
-  {
-    "surahNumber": 29,
-    "ayahNumber": 69,
-    "arabicText": "وَالَّذِينَ جَاهَدُوا فِينَا لَنَهْدِيَنَّهُمْ سُبُلَنَا ۚ وَإِنَّ اللَّهَ لَمَعَ الْمُحْسِنِينَ",
-    "englishTranslation": "And those who strive for Us - We will surely guide them to Our ways. And indeed, Allah is with the doers of good.",
-    "surahName": "Al-Ankabut"
-  },
-  {
-    "surahNumber": 65,
-    "ayahNumber": 3,
-    "arabicText": "وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ",
-    "englishTranslation": "And whoever relies upon Allah - then He is sufficient for him.",
-    "surahName": "At-Talaq"
+    "surahNumber": 33,
+    "ayahNumber": 41,
+    "arabicText": "يَا أَيُّهَا الَّذِينَ آمَنُوا اذْكُرُوا اللَّهَ ذِكْرًا كَثِيرًا",
+    "englishTranslation": "O you who believe! Remember Allah with much remembrance.",
+    "surahName": "Al-Ahzab"
   },
   {
     "surahNumber": 2,
     "ayahNumber": 286,
     "arabicText": "لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا",
-    "englishTranslation": "Allah does not charge a soul except with that within its capacity.",
+    "englishTranslation": "Allah burdens not a person beyond his scope.",
+    "surahName": "Al-Baqarah"
+  },
+  {
+    "surahNumber": 65,
+    "ayahNumber": 3,
+    "arabicText": "وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ",
+    "englishTranslation": "And whosoever puts his trust in Allah, then He will suffice him.",
+    "surahName": "At-Talaq"
+  },
+  {
+    "surahNumber": 13,
+    "ayahNumber": 28,
+    "arabicText": "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ",
+    "englishTranslation": "Verily, in the remembrance of Allah do hearts find rest.",
+    "surahName": "Ar-Ra'd"
+  },
+  {
+    "surahNumber": 40,
+    "ayahNumber": 60,
+    "arabicText": "وَقَالَ رَبُّكُمُ ادْعُونِي أَسْتَجِبْ لَكُمْ",
+    "englishTranslation": "And your Lord said: Invoke Me, I will respond to your invocation.",
+    "surahName": "Ghafir"
+  },
+  {
+    "surahNumber": 2,
+    "ayahNumber": 153,
+    "arabicText": "يَا أَيُّهَا الَّذِينَ آمَنُوا اسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ ۚ إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
+    "englishTranslation": "O you who believe! Seek help in patience and the prayer. Truly, Allah is with the patient.",
     "surahName": "Al-Baqarah"
   },
   {
     "surahNumber": 20,
     "ayahNumber": 25,
     "arabicText": "قَالَ رَبِّ اشْرَحْ لِي صَدْرِي",
-    "englishTranslation": "He said, My Lord, expand for me my breast.",
+    "englishTranslation": "He said: O my Lord! Open for me my chest.",
     "surahName": "Ta-Ha"
   },
   {
-    "surahNumber": 33,
-    "ayahNumber": 41,
-    "arabicText": "يَا أَيُّهَا الَّذِينَ آمَنُوا اذْكُرُوا اللَّهَ ذِكْرًا كَثِيرًا",
-    "englishTranslation": "O you who have believed, remember Allah with much remembrance.",
-    "surahName": "Al-Ahzab"
+    "surahNumber": 50,
+    "ayahNumber": 16,
+    "arabicText": "وَنَحْنُ أَقْرَبُ إِلَيْهِ مِنْ حَبْلِ الْوَرِيدِ",
+    "englishTranslation": "And We are nearer to him than his jugular vein.",
+    "surahName": "Qaf"
+  },
+  {
+    "surahNumber": 57,
+    "ayahNumber": 4,
+    "arabicText": "وَهُوَ مَعَكُمْ أَيْنَ مَا كُنتُمْ",
+    "englishTranslation": "And He is with you wheresoever you may be.",
+    "surahName": "Al-Hadid"
+  },
+  {
+    "surahNumber": 29,
+    "ayahNumber": 69,
+    "arabicText": "وَالَّذِينَ جَاهَدُوا فِينَا لَنَهْدِيَنَّهُمْ سُبُلَنَا",
+    "englishTranslation": "As for those who strive hard in Us, We will surely guide them to Our Paths.",
+    "surahName": "Al-Ankabut"
+  },
+  {
+    "surahNumber": 39,
+    "ayahNumber": 53,
+    "arabicText": "لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ",
+    "englishTranslation": "Despair not of the Mercy of Allah.",
+    "surahName": "Az-Zumar"
+  },
+  {
+    "surahNumber": 3,
+    "ayahNumber": 139,
+    "arabicText": "وَلَا تَهِنُوا وَلَا تَحْزَنُوا وَأَنتُمُ الْأَعْلَوْنَ إِن كُنتُم مُّؤْمِنِينَ",
+    "englishTranslation": "So do not become weak, nor be sad, and you will be superior if you are indeed believers.",
+    "surahName": "Ali 'Imran"
+  },
+  {
+    "surahNumber": 39,
+    "ayahNumber": 10,
+    "arabicText": "إِنَّمَا يُوَفَّى الصَّابِرُونَ أَجْرَهُم بِغَيْرِ حِسَابٍ",
+    "englishTranslation": "Only those who are patient shall receive their reward in full, without reckoning.",
+    "surahName": "Az-Zumar"
   }
 ]
