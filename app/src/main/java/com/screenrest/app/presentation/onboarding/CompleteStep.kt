@@ -121,7 +121,11 @@ fun CompleteStep(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextButton(onClick = onBack) {
+        FilledTonalButton(
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth().height(44.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
             Text("Back", style = MaterialTheme.typography.labelMedium)
         }
 
