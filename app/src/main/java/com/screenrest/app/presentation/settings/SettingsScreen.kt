@@ -45,6 +45,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.screenrest.app.domain.model.ThemeColor
 import com.screenrest.app.domain.model.ThemeMode
 import com.screenrest.app.presentation.theme.getThemeColorPalette
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -389,21 +390,48 @@ private fun ScrollWheelPicker(
     val items = range.toList()
     val visibleItems = 3
     val itemHeight = 40.dp
-    val itemHeightPx = with(androidx.compose.ui.platform.LocalDensity.current) { itemHeight.toPx() }
-    
-    val listState = rememberLazyListState(
-        initialFirstVisibleItemIndex = items.indexOf(value).coerceAtLeast(0)
-    )
+
+    val initialIndex = items.indexOf(value).coerceAtLeast(0)
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (!listState.isScrollInProgress) {
-            val centerIndex = listState.firstVisibleItemIndex +
-                    if (listState.firstVisibleItemScrollOffset > itemHeightPx * 0.5f) 1 else 0
-            val clampedIndex = centerIndex.coerceIn(0, items.lastIndex)
-            if (items[clampedIndex] != value) {
-                onValueChange(items[clampedIndex])
+    // Use layoutInfo to find the item closest to viewport center (density-independent)
+    val centeredItemIndex by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
+            layoutInfo.visibleItemsInfo
+                .minByOrNull { abs((it.offset + it.size / 2) - viewportCenter) }
+                ?.index ?: initialIndex
+        }
+    }
+
+    // Stable references to avoid restarting effects on recomposition
+    val currentOnValueChange by rememberUpdatedState(onValueChange)
+    val currentValue by rememberUpdatedState(value)
+
+    // When scrolling stops, report the centered value
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.isScrollInProgress }
+            .collect { scrolling ->
+                if (!scrolling) {
+                    delay(80)
+                    if (!listState.isScrollInProgress) {
+                        val idx = centeredItemIndex.coerceIn(0, items.lastIndex)
+                        listState.scrollToItem(idx)
+                        if (items[idx] != currentValue) {
+                            currentOnValueChange(items[idx])
+                        }
+                    }
+                }
             }
+    }
+
+    // Sync scroll position when value changes externally
+    LaunchedEffect(value) {
+        val targetIndex = items.indexOf(value).coerceAtLeast(0)
+        if (!listState.isScrollInProgress) {
+            listState.scrollToItem(targetIndex)
         }
     }
 
@@ -430,11 +458,8 @@ private fun ScrollWheelPicker(
             flingBehavior = flingBehavior
         ) {
             items(items.size) { index ->
-                val distanceFromCenter = abs(
-                    index - (listState.firstVisibleItemIndex +
-                            if (listState.firstVisibleItemScrollOffset > itemHeightPx * 0.5f) 1 else 0)
-                )
-                val alpha = if (distanceFromCenter == 0) 1f else 0.35f
+                val isCenter = index == centeredItemIndex
+                val alpha = if (isCenter) 1f else 0.35f
 
                 Box(
                     modifier = Modifier
@@ -445,8 +470,8 @@ private fun ScrollWheelPicker(
                 ) {
                     Text(
                         text = String.format("%02d", items[index]),
-                        fontSize = if (distanceFromCenter == 0) 22.sp else 16.sp,
-                        fontWeight = if (distanceFromCenter == 0) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = if (isCenter) 22.sp else 16.sp,
+                        fontWeight = if (isCenter) FontWeight.Bold else FontWeight.Normal,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
                     )

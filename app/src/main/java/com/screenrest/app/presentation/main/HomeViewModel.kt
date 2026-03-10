@@ -105,26 +105,33 @@ class HomeViewModel @Inject constructor(
         }
     }
     
+    private var isToggling = false
+    
     fun toggleService() {
+        if (isToggling) return
+        isToggling = true
+        
         viewModelScope.launch {
-            val newState = !_uiState.value.isServiceEnabled
-            settingsRepository.setUsageTrackingEnabled(newState)
-            
-            if (newState) {
-                ServiceController.startTracking(context)
-            } else {
-                ServiceController.stopTracking(context)
+            try {
+                val shouldStart = !_uiState.value.isServiceRunning
+                settingsRepository.setUsageTrackingEnabled(shouldStart)
+                
+                if (shouldStart) {
+                    ServiceController.startTracking(context)
+                } else {
+                    ServiceController.stopTracking(context)
+                }
+                
+                _uiState.value = _uiState.value.copy(
+                    isServiceEnabled = shouldStart,
+                    isServiceRunning = shouldStart
+                )
+                
+                delay(1500L)
+                refreshStatus()
+            } finally {
+                isToggling = false
             }
-            
-            // Optimistically update UI immediately so button responds on first tap
-            _uiState.value = _uiState.value.copy(
-                isServiceEnabled = newState,
-                isServiceRunning = newState
-            )
-            
-            // Then confirm actual state after service has had time to start/stop
-            delay(500L)
-            refreshStatus()
         }
     }
 }
