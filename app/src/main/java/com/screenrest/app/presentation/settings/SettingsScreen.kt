@@ -287,7 +287,7 @@ private fun TimerAdjustDialog(
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
-                TimeScrollPicker(
+                TimeStepperPicker(
                     minutes = thresholdMin,
                     seconds = thresholdSec,
                     onMinutesChange = { thresholdMin = it },
@@ -306,7 +306,7 @@ private fun TimerAdjustDialog(
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
-                TimeScrollPicker(
+                TimeStepperPicker(
                     minutes = durationMin,
                     seconds = durationSec,
                     onMinutesChange = { durationMin = it },
@@ -335,7 +335,7 @@ private fun TimerAdjustDialog(
 }
 
 @Composable
-private fun TimeScrollPicker(
+private fun TimeStepperPicker(
     minutes: Int,
     seconds: Int,
     onMinutesChange: (Int) -> Unit,
@@ -347,136 +347,98 @@ private fun TimeScrollPicker(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Minutes wheel
-        ScrollWheelPicker(
+        // Minutes stepper
+        NumberStepperPicker(
             value = minutes,
             range = 0..maxMinutes,
             onValueChange = onMinutesChange,
+            label = "min",
             modifier = Modifier.weight(1f)
         )
-        Text(
-            text = "min",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 4.dp)
-        )
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(16.dp))
 
-        // Seconds wheel
-        ScrollWheelPicker(
+        // Seconds stepper
+        NumberStepperPicker(
             value = seconds,
             range = 0..59,
             onValueChange = onSecondsChange,
+            label = "sec",
             modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = "sec",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 4.dp)
         )
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ScrollWheelPicker(
+private fun NumberStepperPicker(
     value: Int,
     range: IntRange,
     onValueChange: (Int) -> Unit,
+    label: String,
     modifier: Modifier = Modifier
 ) {
-    val items = range.toList()
-    val visibleItems = 3
-    val itemHeight = 40.dp
-
-    val initialIndex = items.indexOf(value).coerceAtLeast(0)
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
-    val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
-
-    // Use layoutInfo to find the item closest to viewport center (density-independent)
-    val centeredItemIndex by remember {
-        derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
-            layoutInfo.visibleItemsInfo
-                .minByOrNull { abs((it.offset + it.size / 2) - viewportCenter) }
-                ?.index ?: initialIndex
-        }
-    }
-
-    // Stable references to avoid restarting effects on recomposition
-    val currentOnValueChange by rememberUpdatedState(onValueChange)
-    val currentValue by rememberUpdatedState(value)
-
-    // When scrolling stops, report the centered value
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.isScrollInProgress }
-            .collect { scrolling ->
-                if (!scrolling) {
-                    delay(80)
-                    if (!listState.isScrollInProgress) {
-                        val idx = centeredItemIndex.coerceIn(0, items.lastIndex)
-                        listState.scrollToItem(idx)
-                        if (items[idx] != currentValue) {
-                            currentOnValueChange(items[idx])
-                        }
-                    }
-                }
-            }
-    }
-
-    // Sync scroll position when value changes externally
-    LaunchedEffect(value) {
-        val targetIndex = items.indexOf(value).coerceAtLeast(0)
-        if (!listState.isScrollInProgress) {
-            listState.scrollToItem(targetIndex)
-        }
-    }
-
-    Box(
-        modifier = modifier.height(itemHeight * visibleItems),
-        contentAlignment = Alignment.Center
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Selection highlight
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(itemHeight)
-                .padding(horizontal = 4.dp),
-            shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-        ) {}
-
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(itemHeight * visibleItems),
-            contentPadding = PaddingValues(vertical = itemHeight),
-            flingBehavior = flingBehavior
+        // + button
+        FilledTonalIconButton(
+            onClick = {
+                if (value < range.last) onValueChange(value + 1)
+            },
+            enabled = value < range.last,
+            modifier = Modifier.size(40.dp),
+            shape = RoundedCornerShape(8.dp)
         ) {
-            items(items.size) { index ->
-                val isCenter = index == centeredItemIndex
-                val alpha = if (isCenter) 1f else 0.35f
+            Text(
+                text = "+",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(itemHeight)
-                        .alpha(alpha),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = String.format("%02d", items[index]),
-                        fontSize = if (isCenter) 22.sp else 16.sp,
-                        fontWeight = if (isCenter) FontWeight.Bold else FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
-                    )
-                }
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Value display
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+            modifier = Modifier.size(width = 64.dp, height = 48.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = String.format("%02d", value),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
             }
+        }
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // - button
+        FilledTonalIconButton(
+            onClick = {
+                if (value > range.first) onValueChange(value - 1)
+            },
+            enabled = value > range.first,
+            modifier = Modifier.size(40.dp),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(
+                text = "−",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
