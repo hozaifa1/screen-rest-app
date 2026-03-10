@@ -1,6 +1,12 @@
 package com.screenrest.app.presentation.settings
 
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,10 +53,20 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToCustomMessages: () -> Unit,
-    onNavigateToIslamicReminders: () -> Unit = {}
+    onNavigateToIslamicReminders: () -> Unit = {},
+    onNavigateToAyahList: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showTimerDialog by remember { mutableStateOf(false) }
+    var showWhitelistDialog by remember { mutableStateOf(false) }
+
+    if (showWhitelistDialog) {
+        WhitelistAppsDialog(
+            whitelistApps = uiState.whitelistApps,
+            onToggleApp = { viewModel.toggleWhitelistApp(it) },
+            onDismiss = { showWhitelistDialog = false }
+        )
+    }
 
     if (uiState.showLongDurationWarning) {
         LongDurationWarningDialog(
@@ -110,6 +129,13 @@ fun SettingsScreen(
                 onAdjustTimers = { showTimerDialog = true }
             )
 
+            // Whitelist apps section
+            SectionHeader("Timer Exceptions")
+            WhitelistAppsCard(
+                whitelistCount = uiState.whitelistApps.size,
+                onManageWhitelist = { showWhitelistDialog = true }
+            )
+
             // Messages section
             SectionHeader("Messages")
             MessagesCard(
@@ -118,7 +144,8 @@ fun SettingsScreen(
                 onQuranMessagesToggle = { viewModel.updateQuranMessagesEnabled(it) },
                 onIslamicRemindersToggle = { viewModel.updateIslamicRemindersEnabled(it) },
                 onNavigateToCustomMessages = onNavigateToCustomMessages,
-                onNavigateToIslamicReminders = onNavigateToIslamicReminders
+                onNavigateToIslamicReminders = onNavigateToIslamicReminders,
+                onNavigateToAyahList = onNavigateToAyahList
             )
 
             // Appearance section
@@ -362,6 +389,8 @@ private fun ScrollWheelPicker(
     val items = range.toList()
     val visibleItems = 3
     val itemHeight = 40.dp
+    val itemHeightPx = with(androidx.compose.ui.platform.LocalDensity.current) { itemHeight.toPx() }
+    
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = items.indexOf(value).coerceAtLeast(0)
     )
@@ -370,7 +399,7 @@ private fun ScrollWheelPicker(
     LaunchedEffect(listState.isScrollInProgress) {
         if (!listState.isScrollInProgress) {
             val centerIndex = listState.firstVisibleItemIndex +
-                    if (listState.firstVisibleItemScrollOffset > itemHeight.value * 0.5f) 1 else 0
+                    if (listState.firstVisibleItemScrollOffset > itemHeightPx * 0.5f) 1 else 0
             val clampedIndex = centerIndex.coerceIn(0, items.lastIndex)
             if (items[clampedIndex] != value) {
                 onValueChange(items[clampedIndex])
@@ -403,7 +432,7 @@ private fun ScrollWheelPicker(
             items(items.size) { index ->
                 val distanceFromCenter = abs(
                     index - (listState.firstVisibleItemIndex +
-                            if (listState.firstVisibleItemScrollOffset > itemHeight.value * 0.5f) 1 else 0)
+                            if (listState.firstVisibleItemScrollOffset > itemHeightPx * 0.5f) 1 else 0)
                 )
                 val alpha = if (distanceFromCenter == 0) 1f else 0.35f
 
@@ -425,6 +454,209 @@ private fun ScrollWheelPicker(
             }
         }
     }
+}
+
+@Composable
+private fun WhitelistAppsCard(
+    whitelistCount: Int,
+    onManageWhitelist: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Whitelist Apps",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = if (whitelistCount > 0) "$whitelistCount app${if (whitelistCount != 1) "s" else ""} - timer pauses when active" else "No apps whitelisted",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            FilledTonalButton(
+                onClick = onManageWhitelist,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Manage Apps")
+            }
+        }
+    }
+}
+
+data class AppInfo(
+    val packageName: String,
+    val label: String,
+    val icon: android.graphics.drawable.Drawable?
+)
+
+@Composable
+private fun WhitelistAppsDialog(
+    whitelistApps: Set<String>,
+    onToggleApp: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val packageManager = context.packageManager
+    var searchQuery by remember { mutableStateOf("") }
+    
+    val installedApps = remember {
+        try {
+            val launcherIntent = android.content.Intent(android.content.Intent.ACTION_MAIN, null)
+            launcherIntent.addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+            
+            packageManager.queryIntentActivities(launcherIntent, PackageManager.MATCH_ALL)
+                .mapNotNull { resolveInfo ->
+                    try {
+                        val appInfo = resolveInfo.activityInfo.applicationInfo
+                        val label = resolveInfo.loadLabel(packageManager)?.toString() 
+                            ?: appInfo.loadLabel(packageManager)?.toString() 
+                            ?: return@mapNotNull null
+                        AppInfo(
+                            packageName = appInfo.packageName,
+                            label = label,
+                            icon = try { resolveInfo.loadIcon(packageManager) } catch (e: Exception) { null }
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                .distinctBy { it.packageName }
+                .sortedBy { it.label.lowercase() }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    val filteredAndSortedApps = remember(searchQuery, whitelistApps, installedApps) {
+        installedApps
+            .filter { app ->
+                if (searchQuery.isBlank()) true
+                else app.label.contains(searchQuery, ignoreCase = true)
+            }
+            .sortedWith(
+                compareByDescending<AppInfo> { whitelistApps.contains(it.packageName) }
+                    .thenBy { it.label }
+            )
+    }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(
+                    "Whitelist Apps",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "Timer pauses when using these apps",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search apps...") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Filled.Search,
+                            contentDescription = "Search"
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(
+                                    Icons.Filled.Close,
+                                    contentDescription = "Clear"
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 450.dp)
+                ) {
+                    items(
+                        items = filteredAndSortedApps,
+                        key = { it.packageName }
+                    ) { app ->
+                        val isWhitelisted = whitelistApps.contains(app.packageName)
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isWhitelisted) 
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            else 
+                                Color.Transparent
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onToggleApp(app.packageName) }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                app.icon?.let { drawable ->
+                                    val bitmap = drawable.toBitmap(width = 96, height = 96)
+                                    Image(
+                                        painter = BitmapPainter(bitmap.asImageBitmap()),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = app.label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (isWhitelisted) FontWeight.Medium else FontWeight.Normal,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Switch(
+                                    checked = isWhitelisted,
+                                    onCheckedChange = { onToggleApp(app.packageName) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        }
+    )
 }
 
 @Composable
@@ -457,7 +689,8 @@ private fun MessagesCard(
     onQuranMessagesToggle: (Boolean) -> Unit,
     onIslamicRemindersToggle: (Boolean) -> Unit,
     onNavigateToCustomMessages: () -> Unit,
-    onNavigateToIslamicReminders: () -> Unit
+    onNavigateToIslamicReminders: () -> Unit,
+    onNavigateToAyahList: () -> Unit
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
@@ -484,6 +717,27 @@ private fun MessagesCard(
                 Switch(
                     checked = quranMessagesEnabled,
                     onCheckedChange = onQuranMessagesToggle
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onNavigateToAyahList() }
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Edit Quranic Verses",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -539,32 +793,13 @@ private fun MessagesCard(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                thickness = 0.5.dp
+            
+            Text(
+                text = "Messages will alternate: Ayah → Reminder → Ayah → Reminder",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onNavigateToCustomMessages() }
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Custom Messages",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
     }
 }
