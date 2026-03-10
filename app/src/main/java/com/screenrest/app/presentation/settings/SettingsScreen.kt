@@ -377,6 +377,21 @@ private fun NumberStepperPicker(
     label: String,
     modifier: Modifier = Modifier
 ) {
+    var showInputDialog by remember { mutableStateOf(false) }
+
+    if (showInputDialog) {
+        NumberInputDialog(
+            currentValue = value,
+            range = range,
+            label = label,
+            onConfirm = { newValue ->
+                onValueChange(newValue)
+                showInputDialog = false
+            },
+            onDismiss = { showInputDialog = false }
+        )
+    }
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -399,8 +414,9 @@ private fun NumberStepperPicker(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Value display
+        // Value display (clickable for keyboard input)
         Surface(
+            onClick = { showInputDialog = true },
             shape = RoundedCornerShape(8.dp),
             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
             modifier = Modifier.size(width = 64.dp, height = 48.dp)
@@ -441,6 +457,70 @@ private fun NumberStepperPicker(
             )
         }
     }
+}
+
+@Composable
+private fun NumberInputDialog(
+    currentValue: Int,
+    range: IntRange,
+    label: String,
+    onConfirm: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var textValue by remember { mutableStateOf(currentValue.toString()) }
+    var isError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Enter $label")
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = textValue,
+                    onValueChange = { 
+                        textValue = it
+                        val num = it.toIntOrNull()
+                        isError = num == null || num !in range
+                    },
+                    label = { Text("Value (${range.first}-${range.last})") },
+                    singleLine = true,
+                    isError = isError,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (isError) {
+                    Text(
+                        text = "Enter a number between ${range.first} and ${range.last}",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val num = textValue.toIntOrNull()
+                    if (num != null && num in range) {
+                        onConfirm(num)
+                    }
+                },
+                enabled = !isError && textValue.isNotEmpty()
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
