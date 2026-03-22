@@ -62,6 +62,7 @@ class UsageTrackingService : LifecycleService() {
     private var isScreenOn: Boolean = true
     private var isInWhitelistApp: Boolean = false
     private var whitelistPauseStartTime: Long = 0L
+    private var totalWhitelistPauseMs: Long = 0L
     
     private var cachedBreakConfig: BreakConfig = BreakConfig()
     private var whitelistApps: Set<String> = emptySet()
@@ -292,15 +293,21 @@ class UsageTrackingService : LifecycleService() {
     private fun checkWhitelistStatus() {
         if (whitelistApps.isEmpty()) {
             if (isInWhitelistApp) {
+                // Whitelist was cleared while in a whitelist app - finalize pause
+                val pauseDuration = System.currentTimeMillis() - whitelistPauseStartTime
+                totalWhitelistPauseMs += pauseDuration
                 isInWhitelistApp = false
                 whitelistPauseStartTime = 0L
+                Log.d(TAG, "Whitelist cleared - resuming timer (paused for ${pauseDuration}ms)")
             }
             return
         }
         
+        if (!isScreenOn) return
+        
         val currentApp = getCurrentForegroundApp()
         
-        // Exclude our own package from detection
+        // Exclude our own package from detection - treat as non-whitelist
         val ownPackage = applicationContext.packageName
         val effectiveApp = if (currentApp == ownPackage) null else currentApp
         
@@ -312,12 +319,12 @@ class UsageTrackingService : LifecycleService() {
             whitelistPauseStartTime = System.currentTimeMillis()
             Log.d(TAG, "Entered whitelist app: $effectiveApp - pausing timer")
         } else if (!shouldBePaused && isInWhitelistApp) {
-            // Just left whitelist app - resume tracking
+            // Just left whitelist app - accumulate pause time
             val pauseDuration = System.currentTimeMillis() - whitelistPauseStartTime
-            lastScreenOnTimestamp += pauseDuration
+            totalWhitelistPauseMs += pauseDuration
             isInWhitelistApp = false
             whitelistPauseStartTime = 0L
-            Log.d(TAG, "Left whitelist app - resuming timer (paused for ${pauseDuration}ms)")
+            Log.d(TAG, "Left whitelist app - resuming timer (paused for ${pauseDuration}ms, total pause: ${totalWhitelistPauseMs}ms)")
         }
     }
     
@@ -331,7 +338,7 @@ class UsageTrackingService : LifecycleService() {
             val now = System.currentTimeMillis()
             
             // Approach 1: Use UsageEvents (most accurate)
-            val events = manager.queryEvents(now - 10_000, now)
+            val events = manager.queryEvents(now - 60_000, now)
             var foregroundApp: String? = null
             var latestTimestamp = 0L
             
@@ -377,18 +384,21 @@ class UsageTrackingService : LifecycleService() {
     }
     
     private fun calculateCurrentUsage(): Long {
+        val now = System.currentTimeMillis()
         val currentSessionTime = if (isScreenOn) {
-            if (isInWhitelistApp && whitelistPauseStartTime > 0) {
-                // Freeze timer at the moment user entered the whitelist app
-                whitelistPauseStartTime - lastScreenOnTimestamp
-            } else {
-                System.currentTimeMillis() - lastScreenOnTimestamp
-            }
+            now - lastScreenOnTimestamp
         } else {
             0L
         }
         
-        return accumulatedUsageMs + maxOf(0L, currentSessionTime)
+        // Calculate current whitelist pause offset
+        val currentPauseMs = if (isInWhitelistApp && whitelistPauseStartTime > 0) {
+            totalWhitelistPauseMs + (now - whitelistPauseStartTime)
+        } else {
+            totalWhitelistPauseMs
+        }
+        
+        return maxOf(0L, accumulatedUsageMs + currentSessionTime - currentPauseMs)
     }
     
     private fun resetAfterBlock() {
@@ -396,6 +406,8 @@ class UsageTrackingService : LifecycleService() {
         lastScreenOnTimestamp = System.currentTimeMillis()
         currentUsageMs = 0L
         hasTriggeredBlockThisCycle = false
+        totalWhitelistPauseMs = 0L
+        whitelistPauseStartTime = if (isInWhitelistApp) System.currentTimeMillis() else 0L
         BlockAccessibilityService.isBlockActive = false
         Log.d(TAG, "Tracking reset after block complete")
     }

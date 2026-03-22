@@ -8,8 +8,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+data class IslamicRemindersUiState(
+    val reminders: List<IslamicReminder> = emptyList(),
+    val showAddDialog: Boolean = false,
+    val showEditDialog: Boolean = false,
+    val editingReminder: IslamicReminder? = null,
+    val dialogText: String = "",
+    val error: String? = null
+)
 
 @HiltViewModel
 class IslamicRemindersViewModel @Inject constructor(
@@ -33,63 +43,95 @@ class IslamicRemindersViewModel @Inject constructor(
     private fun loadReminders() {
         viewModelScope.launch {
             manageIslamicRemindersUseCase.getAllReminders().collect { reminders ->
-                _uiState.value = _uiState.value.copy(reminders = reminders)
+                _uiState.update { it.copy(reminders = reminders) }
             }
         }
     }
 
     fun showAddDialog() {
-        _uiState.value = _uiState.value.copy(
-            showAddDialog = true,
-            newReminderText = ""
-        )
+        _uiState.update {
+            it.copy(
+                showAddDialog = true,
+                showEditDialog = false,
+                editingReminder = null,
+                dialogText = ""
+            )
+        }
     }
 
-    fun hideAddDialog() {
-        _uiState.value = _uiState.value.copy(
-            showAddDialog = false,
-            newReminderText = ""
-        )
+    fun showEditDialog(reminder: IslamicReminder) {
+        _uiState.update {
+            it.copy(
+                showEditDialog = true,
+                showAddDialog = false,
+                editingReminder = reminder,
+                dialogText = reminder.text
+            )
+        }
     }
 
-    fun updateNewReminderText(text: String) {
+    fun hideDialog() {
+        _uiState.update {
+            it.copy(
+                showAddDialog = false,
+                showEditDialog = false,
+                editingReminder = null,
+                dialogText = ""
+            )
+        }
+    }
+
+    fun updateDialogText(text: String) {
         if (text.length <= 500) {
-            _uiState.value = _uiState.value.copy(newReminderText = text)
+            _uiState.update { it.copy(dialogText = text) }
         }
     }
 
     fun addReminder() {
-        val text = _uiState.value.newReminderText.trim()
+        val text = _uiState.value.dialogText.trim()
         if (text.isNotEmpty()) {
             viewModelScope.launch {
-                try {
-                    manageIslamicRemindersUseCase.addReminder(text)
-                    hideAddDialog()
-                } catch (e: Exception) {
-                    _uiState.value = _uiState.value.copy(error = e.message)
-                }
+                val result = manageIslamicRemindersUseCase.addReminder(text)
+                result.fold(
+                    onSuccess = { hideDialog() },
+                    onFailure = { e ->
+                        _uiState.update { it.copy(error = e.message ?: "Failed to add reminder") }
+                    }
+                )
             }
+        }
+    }
+
+    fun updateReminder() {
+        val state = _uiState.value
+        val editing = state.editingReminder ?: return
+        val text = state.dialogText.trim()
+        if (text.isEmpty()) {
+            _uiState.update { it.copy(error = "Reminder text cannot be empty") }
+            return
+        }
+
+        viewModelScope.launch {
+            val result = manageIslamicRemindersUseCase.updateReminder(editing.id, text)
+            result.fold(
+                onSuccess = { hideDialog() },
+                onFailure = { e ->
+                    _uiState.update { it.copy(error = e.message ?: "Failed to update reminder") }
+                }
+            )
         }
     }
 
     fun deleteReminder(reminderId: Long) {
         viewModelScope.launch {
-            try {
-                manageIslamicRemindersUseCase.deleteReminder(reminderId)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+            val result = manageIslamicRemindersUseCase.deleteReminder(reminderId)
+            result.onFailure { e ->
+                _uiState.update { it.copy(error = e.message ?: "Failed to delete reminder") }
             }
         }
     }
 
     fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.update { it.copy(error = null) }
     }
 }
-
-data class IslamicRemindersUiState(
-    val reminders: List<IslamicReminder> = emptyList(),
-    val showAddDialog: Boolean = false,
-    val newReminderText: String = "",
-    val error: String? = null
-)

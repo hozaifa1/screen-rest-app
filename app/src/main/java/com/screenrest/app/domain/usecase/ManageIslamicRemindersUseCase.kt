@@ -34,6 +34,24 @@ class ManageIslamicRemindersUseCase @Inject constructor(
         }
     }
 
+    suspend fun updateReminder(id: Long, text: String): Result<Unit> {
+        return try {
+            if (text.isBlank()) {
+                return Result.failure(IllegalArgumentException("Reminder text cannot be empty"))
+            }
+            if (text.length > 500) {
+                return Result.failure(IllegalArgumentException("Reminder text too long (max 500 characters)"))
+            }
+            val existing = islamicReminderRepository.getReminderById(id)
+                ?: return Result.failure(IllegalArgumentException("Reminder not found"))
+            val updated = existing.copy(text = text.trim())
+            islamicReminderRepository.updateReminder(updated)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun deleteReminder(id: Long): Result<Unit> {
         return try {
             islamicReminderRepository.deleteReminderById(id)

@@ -25,6 +25,18 @@ class ManageAyahsUseCase @Inject constructor(
         }
     }
 
+    suspend fun updateAyah(ayah: Ayah): Result<Unit> {
+        return try {
+            if (ayah.englishTranslation.isBlank()) {
+                return Result.failure(IllegalArgumentException("Ayah translation cannot be empty"))
+            }
+            ayahDatabaseRepository.updateAyah(ayah)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun deleteAyah(id: Long): Result<Unit> {
         return try {
             ayahDatabaseRepository.deleteAyahById(id)

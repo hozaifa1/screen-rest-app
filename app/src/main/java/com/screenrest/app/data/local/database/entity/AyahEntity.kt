@@ -18,6 +18,7 @@ data class AyahEntity(
 
 fun AyahEntity.toDomain(): Ayah {
     return Ayah(
+        id = id,
         surahNumber = surahNumber,
         ayahNumber = ayahNumber,
         arabicText = arabicText,
@@ -28,7 +29,7 @@ fun AyahEntity.toDomain(): Ayah {
 
 fun Ayah.toEntity(createdAt: Long = System.currentTimeMillis()): AyahEntity {
     return AyahEntity(
-        id = 0,
+        id = id,
         surahNumber = surahNumber,
         ayahNumber = ayahNumber,
         arabicText = arabicText,

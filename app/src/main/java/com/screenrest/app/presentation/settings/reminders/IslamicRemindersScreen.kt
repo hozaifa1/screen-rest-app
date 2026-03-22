@@ -1,5 +1,6 @@
 package com.screenrest.app.presentation.settings.reminders
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,11 +28,24 @@ fun IslamicRemindersScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     if (uiState.showAddDialog) {
-        AddReminderDialog(
-            reminderText = uiState.newReminderText,
-            onTextChange = { viewModel.updateNewReminderText(it) },
-            onDismiss = { viewModel.hideAddDialog() },
+        ReminderFormDialog(
+            title = "Add Islamic Reminder",
+            confirmLabel = "Add",
+            reminderText = uiState.dialogText,
+            onTextChange = { viewModel.updateDialogText(it) },
+            onDismiss = { viewModel.hideDialog() },
             onConfirm = { viewModel.addReminder() }
+        )
+    }
+
+    if (uiState.showEditDialog) {
+        ReminderFormDialog(
+            title = "Edit Islamic Reminder",
+            confirmLabel = "Save",
+            reminderText = uiState.dialogText,
+            onTextChange = { viewModel.updateDialogText(it) },
+            onDismiss = { viewModel.hideDialog() },
+            onConfirm = { viewModel.updateReminder() }
         )
     }
 
@@ -99,7 +114,7 @@ fun IslamicRemindersScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "These reminders are shown during screen breaks to help you remember Allah. You can add, edit, or delete them.",
+                        text = "These reminders are shown during screen breaks to help you remember Allah. Tap a reminder to edit it.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -144,6 +159,7 @@ fun IslamicRemindersScreen(
                     ) { reminder ->
                         ReminderItem(
                             reminder = reminder,
+                            onEdit = { viewModel.showEditDialog(reminder) },
                             onDelete = { viewModel.deleteReminder(reminder.id) }
                         )
                     }
@@ -156,6 +172,7 @@ fun IslamicRemindersScreen(
 @Composable
 private fun ReminderItem(
     reminder: IslamicReminder,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -184,7 +201,9 @@ private fun ReminderItem(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onEdit() }
     ) {
         Row(
             modifier = Modifier
@@ -202,19 +221,30 @@ private fun ReminderItem(
                 )
             }
 
-            IconButton(onClick = { showDeleteDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete Reminder",
-                    tint = MaterialTheme.colorScheme.error
-                )
+            Row {
+                IconButton(onClick = { onEdit() }) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Reminder",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                IconButton(onClick = { showDeleteDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete Reminder",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun AddReminderDialog(
+private fun ReminderFormDialog(
+    title: String,
+    confirmLabel: String,
     reminderText: String,
     onTextChange: (String) -> Unit,
     onDismiss: () -> Unit,
@@ -223,7 +253,7 @@ private fun AddReminderDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Add Islamic Reminder")
+            Text(title)
         },
         text = {
             Column {
@@ -250,7 +280,7 @@ private fun AddReminderDialog(
                 onClick = onConfirm,
                 enabled = reminderText.trim().isNotEmpty()
             ) {
-                Text("Add")
+                Text(confirmLabel)
             }
         },
         dismissButton = {
