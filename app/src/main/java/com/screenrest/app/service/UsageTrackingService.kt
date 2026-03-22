@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.usage.UsageStatsManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -55,11 +56,15 @@ class UsageTrackingService : LifecycleService() {
     
     private var trackingJob: Job? = null
     private var configJob: Job? = null
+    private var whitelistJob: Job? = null
     private var accumulatedUsageMs: Long = 0L
     private var lastScreenOnTimestamp: Long = 0L
     private var isScreenOn: Boolean = true
+    private var isInWhitelistApp: Boolean = false
+    private var whitelistPauseStartTime: Long = 0L
     
     private var cachedBreakConfig: BreakConfig = BreakConfig()
+    private var whitelistApps: Set<String> = emptySet()
     
     private val powerManager by lazy {
         getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -67,6 +72,10 @@ class UsageTrackingService : LifecycleService() {
     
     private val fusedLocationClient by lazy {
         LocationServices.getFusedLocationProviderClient(this)
+    }
+    
+    private val usageStatsManager by lazy {
+        getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
     }
     
     private val screenReceiver = object : BroadcastReceiver() {
@@ -128,6 +137,19 @@ class UsageTrackingService : LifecycleService() {
             }
         }
         
+        // Start whitelist apps collector
+        whitelistJob?.cancel()
+        whitelistJob = lifecycleScope.launch {
+            try {
+                settingsRepository.whitelistApps.collect { apps ->
+                    whitelistApps = apps
+                    Log.d(TAG, "Whitelist apps loaded: ${apps.size} apps -> $apps")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error collecting whitelist apps", e)
+            }
+        }
+        
         lifecycleScope.launch {
             startTracking()
         }
@@ -185,11 +207,14 @@ class UsageTrackingService : LifecycleService() {
             resetAfterBlock()
         }
         
+        // Check if user is in a whitelisted app
+        checkWhitelistStatus()
+        
         currentUsageMs = calculateCurrentUsage()
         
         val thresholdReached = currentUsageMs >= thresholdMs
         
-        if (thresholdReached && !hasTriggeredBlockThisCycle && !BlockAccessibilityService.isBlockActive && !BlockOverlayService.isOverlayActive && isScreenOn) {
+        if (thresholdReached && !isInWhitelistApp && !hasTriggeredBlockThisCycle && !BlockAccessibilityService.isBlockActive && !BlockOverlayService.isOverlayActive && isScreenOn) {
             Log.w(TAG, "THRESHOLD REACHED! Usage=${currentUsageMs}ms >= ${thresholdMs}ms")
             hasTriggeredBlockThisCycle = true
             
@@ -211,7 +236,12 @@ class UsageTrackingService : LifecycleService() {
             val remainingMs = thresholdMs - currentUsageMs
             val remainingMinutes = (remainingMs / 60_000).toInt()
             val remainingSeconds = ((remainingMs % 60_000) / 1000).toInt()
-            updateNotification("Used: ${formatTime(currentUsageMs)} | Break in ${remainingMinutes}m ${remainingSeconds}s")
+            val statusMsg = if (isInWhitelistApp) {
+                "Timer paused (whitelist app) | Break in ${remainingMinutes}m ${remainingSeconds}s"
+            } else {
+                "Used: ${formatTime(currentUsageMs)} | Break in ${remainingMinutes}m ${remainingSeconds}s"
+            }
+            updateNotification(statusMsg)
         }
     }
     
@@ -259,8 +289,106 @@ class UsageTrackingService : LifecycleService() {
         BlockAccessibilityService.isBlockActive = true
     }
     
+    private fun checkWhitelistStatus() {
+        if (whitelistApps.isEmpty()) {
+            if (isInWhitelistApp) {
+                isInWhitelistApp = false
+                whitelistPauseStartTime = 0L
+            }
+            return
+        }
+        
+        val currentApp = getCurrentForegroundApp()
+        
+        // Exclude our own package from detection
+        val ownPackage = applicationContext.packageName
+        val effectiveApp = if (currentApp == ownPackage) null else currentApp
+        
+        val shouldBePaused = effectiveApp != null && whitelistApps.contains(effectiveApp)
+        
+        if (shouldBePaused && !isInWhitelistApp) {
+            // Just entered whitelist app - pause tracking
+            isInWhitelistApp = true
+            whitelistPauseStartTime = System.currentTimeMillis()
+            Log.d(TAG, "Entered whitelist app: $effectiveApp - pausing timer")
+        } else if (!shouldBePaused && isInWhitelistApp) {
+            // Just left whitelist app - resume tracking
+            val pauseDuration = System.currentTimeMillis() - whitelistPauseStartTime
+            lastScreenOnTimestamp += pauseDuration
+            isInWhitelistApp = false
+            whitelistPauseStartTime = 0L
+            Log.d(TAG, "Left whitelist app - resuming timer (paused for ${pauseDuration}ms)")
+        }
+    }
+    
+    private fun getCurrentForegroundApp(): String? {
+        val manager = usageStatsManager ?: run {
+            Log.e(TAG, "UsageStatsManager is null")
+            return null
+        }
+        
+        return try {
+            val now = System.currentTimeMillis()
+            
+            // Approach 1: Use UsageEvents (most accurate)
+            val events = manager.queryEvents(now - 10_000, now)
+            var foregroundApp: String? = null
+            var latestTimestamp = 0L
+            
+            if (events != null) {
+                val event = android.app.usage.UsageEvents.Event()
+                while (events.hasNextEvent()) {
+                    events.getNextEvent(event)
+                    val type = event.eventType
+                    // MOVE_TO_FOREGROUND = 1 (all versions), ACTIVITY_RESUMED = 15 (API 29+)
+                    if (type == 1 || type == 15) {
+                        if (event.timeStamp >= latestTimestamp) {
+                            latestTimestamp = event.timeStamp
+                            foregroundApp = event.packageName
+                        }
+                    }
+                }
+            }
+            
+            // Approach 2: Fallback to queryUsageStats if events didn't work
+            if (foregroundApp == null) {
+                val stats = manager.queryUsageStats(
+                    UsageStatsManager.INTERVAL_BEST,
+                    now - 60_000,
+                    now
+                )
+                foregroundApp = stats
+                    ?.filter { it.lastTimeUsed > 0 && it.totalTimeInForeground > 0 }
+                    ?.maxByOrNull { it.lastTimeUsed }
+                    ?.packageName
+                    
+                if (foregroundApp != null) {
+                    Log.d(TAG, "Foreground app (fallback): $foregroundApp")
+                }
+            } else {
+                Log.d(TAG, "Foreground app (events): $foregroundApp")
+            }
+            
+            foregroundApp
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting foreground app", e)
+            null
+        }
+    }
+    
     private fun calculateCurrentUsage(): Long {
-        return accumulatedUsageMs + (if (isScreenOn) System.currentTimeMillis() - lastScreenOnTimestamp else 0L)
+        val currentSessionTime = if (isScreenOn) {
+            if (isInWhitelistApp && whitelistPauseStartTime > 0) {
+                // Freeze timer at the moment user entered the whitelist app
+                whitelistPauseStartTime - lastScreenOnTimestamp
+            } else {
+                System.currentTimeMillis() - lastScreenOnTimestamp
+            }
+        } else {
+            0L
+        }
+        
+        return accumulatedUsageMs + maxOf(0L, currentSessionTime)
     }
     
     private fun resetAfterBlock() {

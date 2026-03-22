@@ -3,6 +3,7 @@ package com.screenrest.app.di
 import android.content.Context
 import androidx.room.Room
 import com.screenrest.app.data.local.database.AppDatabase
+import com.screenrest.app.data.local.database.dao.AyahDao
 import com.screenrest.app.data.local.database.dao.CustomMessageDao
 import com.screenrest.app.data.local.database.dao.IslamicReminderDao
 import dagger.Module
@@ -38,5 +39,11 @@ object DatabaseModule {
     @Singleton
     fun provideIslamicReminderDao(database: AppDatabase): IslamicReminderDao {
         return database.islamicReminderDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAyahDao(database: AppDatabase): AyahDao {
+        return database.ayahDao()
     }
 }

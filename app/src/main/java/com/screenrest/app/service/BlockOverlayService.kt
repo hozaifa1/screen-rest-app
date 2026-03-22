@@ -85,6 +85,7 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     private var currentDisplayMessage by mutableStateOf<DisplayMessage?>(null)
     private var currentThemeMode by mutableStateOf(ThemeMode.SYSTEM)
     private var currentThemeColor by mutableStateOf(ThemeColor.TEAL)
+    private var originalThemeColor: ThemeColor = ThemeColor.TEAL
     
     private var isInitialized = false
     private var isCountdownRunning = false
@@ -145,11 +146,15 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
         lifecycleScope.launch {
             try {
                 currentThemeMode = settingsRepository.themeMode.first()
-                currentThemeColor = settingsRepository.themeColor.first()
+                originalThemeColor = settingsRepository.themeColor.first()
+                
+                // Rotate theme dynamically
+                currentThemeColor = getNextThemeColor()
+                
                 currentDisplayMessage = getRandomDisplayMessageUseCase()
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading message", e)
-                currentDisplayMessage = DisplayMessage.Custom("Take a moment to rest your eyes and reflect.")
+                currentDisplayMessage = DisplayMessage.IslamicReminder("Take a moment to rest your eyes and reflect.")
             }
             
             // Now show overlay with loaded message
@@ -302,6 +307,21 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+    
+    private suspend fun getNextThemeColor(): ThemeColor {
+        val allColors = ThemeColor.values()
+        val currentIndex = allColors.indexOf(originalThemeColor)
+        
+        // Get stored theme index from MessageIndexDataStore
+        val messageIndexDataStore = com.screenrest.app.data.local.datastore.MessageIndexDataStore(this)
+        val themeIndex = messageIndexDataStore.themeIndex.first()
+        
+        // Calculate next theme based on rotation
+        val nextThemeIndex = (themeIndex + 1) % allColors.size
+        messageIndexDataStore.incrementThemeIndex(nextThemeIndex)
+        
+        return allColors[themeIndex]
+    }
 }
 
 @Composable
@@ -398,17 +418,6 @@ private fun BlockOverlayContent(
                     )
                 }
                 is DisplayMessage.IslamicReminder -> {
-                    Text(
-                        text = displayMessage.text,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = messageColor,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 34.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                }
-                is DisplayMessage.Custom -> {
                     Text(
                         text = displayMessage.text,
                         fontSize = 22.sp,

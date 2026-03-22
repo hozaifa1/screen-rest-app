@@ -15,6 +15,7 @@ interface SettingsRepository {
     val onboardingCompleted: Flow<Boolean>
     val usageTrackingEnabled: Flow<Boolean>
     val lastBreakTimestamp: Flow<Long>
+    val whitelistApps: Flow<Set<String>>
     
     suspend fun updateBreakConfig(config: BreakConfig)
     suspend fun updateThemeMode(theme: ThemeMode)
@@ -22,6 +23,9 @@ interface SettingsRepository {
     suspend fun setOnboardingCompleted(completed: Boolean)
     suspend fun setUsageTrackingEnabled(enabled: Boolean)
     suspend fun updateLastBreakTimestamp(timestamp: Long)
+    suspend fun addWhitelistApp(packageName: String)
+    suspend fun removeWhitelistApp(packageName: String)
+    suspend fun setWhitelistApps(packageNames: Set<String>)
 }
 
 @Singleton
@@ -35,6 +39,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val onboardingCompleted: Flow<Boolean> = settingsDataStore.onboardingCompleted
     override val usageTrackingEnabled: Flow<Boolean> = settingsDataStore.usageTrackingEnabled
     override val lastBreakTimestamp: Flow<Long> = settingsDataStore.lastBreakTimestamp
+    override val whitelistApps: Flow<Set<String>> = settingsDataStore.whitelistApps
     
     override suspend fun updateBreakConfig(config: BreakConfig) {
         settingsDataStore.updateBreakConfig(config)
@@ -58,5 +63,17 @@ class SettingsRepositoryImpl @Inject constructor(
     
     override suspend fun updateLastBreakTimestamp(timestamp: Long) {
         settingsDataStore.updateLastBreakTimestamp(timestamp)
+    }
+    
+    override suspend fun addWhitelistApp(packageName: String) {
+        settingsDataStore.addWhitelistApp(packageName)
+    }
+    
+    override suspend fun removeWhitelistApp(packageName: String) {
+        settingsDataStore.removeWhitelistApp(packageName)
+    }
+    
+    override suspend fun setWhitelistApps(packageNames: Set<String>) {
+        settingsDataStore.setWhitelistApps(packageNames)
     }
 }

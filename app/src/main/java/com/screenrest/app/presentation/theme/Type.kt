@@ -88,7 +88,7 @@ val Typography = Typography(
     bodySmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
+        fontSize = 12.5.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.4.sp
     ),
@@ -109,7 +109,7 @@ val Typography = Typography(
     labelSmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
+        fontSize = 11.5.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     )

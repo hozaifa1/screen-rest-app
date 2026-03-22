@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.screenrest.app.domain.model.BreakConfig
 import com.screenrest.app.domain.model.ThemeColor
@@ -40,6 +41,7 @@ class SettingsDataStore @Inject constructor(
         val QURAN_MESSAGES_ENABLED = booleanPreferencesKey("quran_messages_enabled")
         val ISLAMIC_REMINDERS_ENABLED = booleanPreferencesKey("islamic_reminders_enabled")
         val LAST_BREAK_TIMESTAMP = longPreferencesKey("last_break_timestamp")
+        val WHITELIST_APPS = stringSetPreferencesKey("whitelist_apps")
     }
 
     val breakConfig: Flow<BreakConfig> = context.dataStore.data.map { preferences ->
@@ -73,6 +75,10 @@ class SettingsDataStore @Inject constructor(
 
     val usageTrackingEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[PreferencesKeys.USAGE_TRACKING_ENABLED] ?: false
+    }
+
+    val whitelistApps: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.WHITELIST_APPS] ?: emptySet()
     }
 
     suspend fun updateBreakConfig(config: BreakConfig) {
@@ -115,6 +121,26 @@ class SettingsDataStore @Inject constructor(
     suspend fun setUsageTrackingEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.USAGE_TRACKING_ENABLED] = enabled
+        }
+    }
+
+    suspend fun addWhitelistApp(packageName: String) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[PreferencesKeys.WHITELIST_APPS] ?: emptySet()
+            preferences[PreferencesKeys.WHITELIST_APPS] = current + packageName
+        }
+    }
+
+    suspend fun removeWhitelistApp(packageName: String) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[PreferencesKeys.WHITELIST_APPS] ?: emptySet()
+            preferences[PreferencesKeys.WHITELIST_APPS] = current - packageName
+        }
+    }
+
+    suspend fun setWhitelistApps(packageNames: Set<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.WHITELIST_APPS] = packageNames
         }
     }
 }

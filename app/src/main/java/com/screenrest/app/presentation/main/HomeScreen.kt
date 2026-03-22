@@ -126,7 +126,6 @@ fun HomeScreen(
             // Tracking toggle + config row
             TrackingControlRow(
                 isRunning = uiState.isServiceRunning,
-                enforcementLevel = uiState.enforcementLevel,
                 breakAfter = formatDuration(uiState.breakConfig.usageThresholdSeconds),
                 breakDuration = formatDuration(uiState.breakConfig.blockDurationSeconds),
                 onToggle = { viewModel.toggleService() },
@@ -153,14 +152,6 @@ fun HomeScreen(
                         title = "Overlay Permission Required",
                         description = "Breaks will only show as notifications without this",
                         permissionType = "overlay"
-                    )
-                }
-
-                if (!uiState.permissionStatus.accessibility && uiState.permissionStatus.usageStats && uiState.permissionStatus.overlay) {
-                    PermissionWarningCard(
-                        title = "Accessibility Service Optional",
-                        description = "Without this, the break screen can be bypassed via the notification bar or home button. Enable for full protection.",
-                        permissionType = "accessibility"
                     )
                 }
             }
@@ -308,7 +299,6 @@ private fun StatItem(value: String, label: String) {
 @Composable
 private fun TrackingControlRow(
     isRunning: Boolean,
-    enforcementLevel: com.screenrest.app.domain.model.EnforcementLevel,
     breakAfter: String,
     breakDuration: String,
     onToggle: () -> Unit,
@@ -341,12 +331,6 @@ private fun TrackingControlRow(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = enforcementLevel.name.lowercase().replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -366,7 +350,7 @@ private fun TrackingControlRow(
                 } else {
                     ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        contentColor = Color.White
                     )
                 }
             ) {

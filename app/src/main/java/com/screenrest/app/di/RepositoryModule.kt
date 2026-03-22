@@ -1,5 +1,7 @@
 package com.screenrest.app.di
 
+import com.screenrest.app.data.repository.AyahDatabaseRepository
+import com.screenrest.app.data.repository.AyahDatabaseRepositoryImpl
 import com.screenrest.app.data.repository.AyahRepository
 import com.screenrest.app.data.repository.AyahRepositoryImpl
 import com.screenrest.app.data.repository.CustomMessageRepository
@@ -35,6 +37,12 @@ abstract class RepositoryModule {
     abstract fun bindAyahRepository(
         ayahRepositoryImpl: AyahRepositoryImpl
     ): AyahRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAyahDatabaseRepository(
+        ayahDatabaseRepositoryImpl: AyahDatabaseRepositoryImpl
+    ): AyahDatabaseRepository
 
     @Binds
     @Singleton

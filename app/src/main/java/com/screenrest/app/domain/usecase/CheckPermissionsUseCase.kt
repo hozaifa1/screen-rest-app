@@ -15,11 +15,8 @@ class CheckPermissionsUseCase @Inject constructor(
     
     fun calculateEnforcementLevel(status: PermissionStatus): EnforcementLevel {
         return when {
-            status.usageStats && status.overlay && status.accessibility -> {
-                EnforcementLevel.FULL
-            }
             status.usageStats && status.overlay -> {
-                EnforcementLevel.STANDARD
+                EnforcementLevel.FULL
             }
             status.usageStats || status.overlay -> {
                 EnforcementLevel.BASIC

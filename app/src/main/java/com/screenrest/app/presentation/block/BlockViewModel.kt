@@ -59,7 +59,7 @@ class BlockViewModel @Inject constructor(
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
-                        displayMessage = DisplayMessage.Custom("Take a moment to rest your eyes and reflect."),
+                        displayMessage = DisplayMessage.IslamicReminder("Take a moment to rest your eyes and reflect."),
                         isLoading = false
                     )
                 }

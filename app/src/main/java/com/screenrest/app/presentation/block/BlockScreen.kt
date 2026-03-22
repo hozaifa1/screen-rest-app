@@ -129,17 +129,6 @@ fun BlockScreen(
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
-                    is DisplayMessage.Custom -> {
-                        Text(
-                            text = displayMessage.text,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = messageColor,
-                            textAlign = TextAlign.Center,
-                            lineHeight = 34.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                    }
                     null -> {}
                 }
             }

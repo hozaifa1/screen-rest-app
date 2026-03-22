@@ -7,6 +7,7 @@ sealed class Screen(val route: String) {
     object BreakConfig : Screen("break_config")
     object CustomMessages : Screen("custom_messages")
     object IslamicReminders : Screen("islamic_reminders")
+    object AyahList : Screen("ayah_list")
     object Permissions : Screen("permissions")
     object About : Screen("about")
 }

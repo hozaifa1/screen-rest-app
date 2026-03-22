@@ -56,6 +56,9 @@ fun NavGraph(
                 },
                 onNavigateToIslamicReminders = {
                     navController.navigate(Screen.IslamicReminders.route)
+                },
+                onNavigateToAyahList = {
+                    navController.navigate(Screen.AyahList.route)
                 }
             )
         }
@@ -78,6 +81,12 @@ fun NavGraph(
         
         composable(Screen.IslamicReminders.route) {
             com.screenrest.app.presentation.settings.reminders.IslamicRemindersScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.AyahList.route) {
+            com.screenrest.app.presentation.settings.ayahs.AyahListScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

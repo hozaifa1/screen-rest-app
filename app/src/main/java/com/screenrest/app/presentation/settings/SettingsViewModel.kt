@@ -33,18 +33,27 @@ class SettingsViewModel @Inject constructor(
             combine(
                 settingsRepository.breakConfig,
                 settingsRepository.themeMode,
-                settingsRepository.themeColor
-            ) { config, theme, color ->
-                Triple(config, theme, color)
-            }.collect { (config, theme, color) ->
+                settingsRepository.themeColor,
+                settingsRepository.whitelistApps
+            ) { config, theme, color, whitelist ->
+                SettingsData(config, theme, color, whitelist)
+            }.collect { data ->
                 _uiState.value = _uiState.value.copy(
-                    breakConfig = config,
-                    themeMode = theme,
-                    themeColor = color
+                    breakConfig = data.config,
+                    themeMode = data.theme,
+                    themeColor = data.color,
+                    whitelistApps = data.whitelist
                 )
             }
         }
     }
+    
+    private data class SettingsData(
+        val config: BreakConfig,
+        val theme: ThemeMode,
+        val color: ThemeColor,
+        val whitelist: Set<String>
+    )
     
     fun updateTimers(thresholdSeconds: Int, durationSeconds: Int) {
         viewModelScope.launch {
@@ -97,12 +106,24 @@ class SettingsViewModel @Inject constructor(
     fun dismissShortThresholdWarning() {
         _uiState.value = _uiState.value.copy(showShortThresholdWarning = false)
     }
+    
+    fun toggleWhitelistApp(packageName: String) {
+        viewModelScope.launch {
+            val currentWhitelist = _uiState.value.whitelistApps
+            if (currentWhitelist.contains(packageName)) {
+                settingsRepository.removeWhitelistApp(packageName)
+            } else {
+                settingsRepository.addWhitelistApp(packageName)
+            }
+        }
+    }
 }
 
 data class SettingsUiState(
     val breakConfig: BreakConfig = BreakConfig(),
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val themeColor: ThemeColor = ThemeColor.TEAL,
+    val whitelistApps: Set<String> = emptySet(),
     val showLongDurationWarning: Boolean = false,
     val showShortThresholdWarning: Boolean = false
 )
