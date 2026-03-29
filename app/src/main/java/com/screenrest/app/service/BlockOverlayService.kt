@@ -397,24 +397,50 @@ private fun BlockOverlayContent(
             // Message content - large and prominent
             when (displayMessage) {
                 is DisplayMessage.QuranAyah -> {
+                    // Arabic text — large, centered, RTL auto-detected
                     Text(
-                        text = displayMessage.ayah.englishTranslation,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Normal,
+                        text = displayMessage.ayah.arabicText,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Light,
                         color = messageColor,
                         textAlign = TextAlign.Center,
-                        lineHeight = 34.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        lineHeight = 52.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(36.dp))
+
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(0.35f),
+                        color = dividerColor,
+                        thickness = 0.5.dp
+                    )
+
+                    Spacer(modifier = Modifier.height(36.dp))
+
+                    // English translation
+                    Text(
+                        text = displayMessage.ayah.englishTranslation,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = messageColor.copy(alpha = 0.88f),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 27.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
                         text = "\u2014 Surah ${displayMessage.ayah.surahName} (${displayMessage.ayah.surahNumber}:${displayMessage.ayah.ayahNumber})",
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         fontStyle = FontStyle.Italic,
-                        color = referenceColor
+                        color = referenceColor.copy(alpha = 0.85f)
                     )
                 }
                 is DisplayMessage.IslamicReminder -> {
@@ -425,7 +451,9 @@ private fun BlockOverlayContent(
                         color = messageColor,
                         textAlign = TextAlign.Center,
                         lineHeight = 34.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
                     )
                 }
                 null -> {
@@ -435,7 +463,8 @@ private fun BlockOverlayContent(
                         fontWeight = FontWeight.Normal,
                         color = messageColor,
                         textAlign = TextAlign.Center,
-                        lineHeight = 34.sp
+                        lineHeight = 34.sp,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }

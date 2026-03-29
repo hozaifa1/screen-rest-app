@@ -22,10 +22,7 @@ class BlockAccessibilityService : AccessibilityService() {
                     val packageName = it.packageName?.toString() ?: return
                     
                     if (packageName == "com.android.systemui") {
-                        Log.d(TAG, "System UI detected during block - closing")
-                        performGlobalAction(GLOBAL_ACTION_BACK)
-                    } else if (packageName != "com.screenrest.app") {
-                        Log.d(TAG, "User tried to switch to: $packageName - closing")
+                        Log.d(TAG, "System UI detected during block - closing notification shade")
                         performGlobalAction(GLOBAL_ACTION_BACK)
                     }
                 }
