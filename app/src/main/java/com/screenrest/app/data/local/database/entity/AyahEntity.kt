@@ -10,7 +10,6 @@ data class AyahEntity(
     val id: Long = 0,
     val surahNumber: Int,
     val ayahNumber: Int,
-    val arabicText: String,
     val englishTranslation: String,
     val surahName: String,
     val createdAt: Long
@@ -21,7 +20,6 @@ fun AyahEntity.toDomain(): Ayah {
         id = id,
         surahNumber = surahNumber,
         ayahNumber = ayahNumber,
-        arabicText = arabicText,
         englishTranslation = englishTranslation,
         surahName = surahName
     )
@@ -32,7 +30,6 @@ fun Ayah.toEntity(createdAt: Long = System.currentTimeMillis()): AyahEntity {
         id = id,
         surahNumber = surahNumber,
         ayahNumber = ayahNumber,
-        arabicText = arabicText,
         englishTranslation = englishTranslation,
         surahName = surahName,
         createdAt = createdAt

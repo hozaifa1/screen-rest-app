@@ -92,11 +92,10 @@ data class RandomAyahResponseDto(
     val data: List<AyahDataDto>
 )
 
-fun AyahDataDto.toAyah(arabicText: String? = null): Ayah {
+fun AyahDataDto.toAyah(): Ayah {
     return Ayah(
         surahNumber = surah.number,
         ayahNumber = numberInSurah,
-        arabicText = arabicText ?: "",
         englishTranslation = text,
         surahName = surah.englishName
     )

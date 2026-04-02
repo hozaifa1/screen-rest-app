@@ -397,30 +397,6 @@ private fun BlockOverlayContent(
             // Message content - large and prominent
             when (displayMessage) {
                 is DisplayMessage.QuranAyah -> {
-                    // Arabic text — large, centered, RTL auto-detected
-                    Text(
-                        text = displayMessage.ayah.arabicText,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Light,
-                        color = messageColor,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 52.sp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(36.dp))
-
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(0.35f),
-                        color = dividerColor,
-                        thickness = 0.5.dp
-                    )
-
-                    Spacer(modifier = Modifier.height(36.dp))
-
-                    // English translation
                     Text(
                         text = displayMessage.ayah.englishTranslation,
                         fontSize = 17.sp,

@@ -119,7 +119,6 @@ class AyahListViewModel @Inject constructor(
             val ayah = Ayah(
                 surahNumber = state.dialogSurahNumber.toIntOrNull() ?: 0,
                 ayahNumber = state.dialogAyahNumber.toIntOrNull() ?: 0,
-                arabicText = "",
                 englishTranslation = text,
                 surahName = state.dialogSurahName.trim().ifEmpty { "Custom" }
             )

@@ -2,20 +2,16 @@ package com.screenrest.app.domain.model
 
 object DefaultIslamicReminders {
     val list = listOf(
-        "You are wasting your time. Put the phone down and remember Allah.",
-        "Is this really how you want to spend the time Allah gave you?",
-        "Get off the screen. Your time is slipping away.",
-        "Allah is watching. Is this what you want Him to see?",
-        "Put the phone down. Go make wudu and pray.",
-        "Every second on this screen is a second you will not get back.",
-        "This is not what you were created for. Step away.",
-        "Your eyes, your time — they are trusts from Allah. Guard them.",
-        "Is scrolling through this screen bringing you closer to Allah or further away?",
-        "You will be asked about how you spent your time. What will you say?",
-        "Put it down. Go read Quran instead.",
-        "Stop wasting time. Remember why you are here.",
-        "Allah sees what you are doing right now. Make it count.",
-        "Your phone is stealing your time. Take it back for Allah's sake.",
-        "You have been on your phone too long. Remember Allah and step away."
+        "Don't let work make you forget the One who gave you the ability to work.",
+        "Bismillah. Renew your intention.",
+        "Allah is watching you right now. Are you mindful of Him?",
+        "Are you working to please Allah?",
+        "SubhanAllah, Alhamdulillah, Allahu Akbar.",
+        "Lower your gaze.",
+        "It doesn't matter if you are blameworthy in the eyes of people if you are praiseworthy in the eyes of Allah",
+        "Are you willing to trade your family for a few minutes of gratification?",
+        "'do not attribute to Allah equals while you know.' Do not love anyone as you should love Allah, they are under His control, and they cannot benefit or harm you at all.",
+        "\"Whoever's two days are equal, then he is at loss.\"",
+        "\"The wise person is one who subjugates his nafs and works for what comes after death, and the foolish person is one who allows his nafs to follow its desires while having wishful hope in Allah.\" (Tirmidhi)"
     )
 }

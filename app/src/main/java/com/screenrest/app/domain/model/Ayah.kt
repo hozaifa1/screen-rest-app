@@ -4,7 +4,6 @@ data class Ayah(
     val id: Long = 0,
     val surahNumber: Int,
     val ayahNumber: Int,
-    val arabicText: String,
     val englishTranslation: String,
     val surahName: String
 )

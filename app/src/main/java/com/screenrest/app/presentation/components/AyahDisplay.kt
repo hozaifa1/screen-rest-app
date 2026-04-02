@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,20 +24,6 @@ fun AyahDisplay(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = ayah.arabicText,
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Normal,
-                textAlign = TextAlign.Center,
-                lineHeight = 48.sp
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 24.dp)
-        )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
         Text(
             text = ayah.englishTranslation,
             style = MaterialTheme.typography.bodyLarge.copy(

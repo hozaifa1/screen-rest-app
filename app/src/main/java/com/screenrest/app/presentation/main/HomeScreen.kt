@@ -28,20 +28,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.screenrest.app.domain.model.DefaultIslamicReminders
 import com.screenrest.app.presentation.components.PermissionWarningCard
 import com.screenrest.app.service.UsageTrackingService
 import kotlinx.coroutines.delay
-
-private val quotes = listOf(
-    "\"Verily, with hardship comes ease.\" — Quran 94:6",
-    "\"Take benefit of five before five: your youth before your old age.\" — Hadith",
-    "\"The best of you are those who are best to their bodies.\"",
-    "\"Rest is not idleness; it is the key to greater productivity.\"",
-    "\"Your eyes are an amanah (trust). Guard them well.\"",
-    "\"He who has no rest, has no worship.\"",
-    "\"Balance is the essence of a good life.\"",
-    "\"Step away from the screen. Step closer to yourself.\""
-)
 
 @Composable
 fun HomeScreen(
@@ -51,7 +41,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     var currentTimeMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var quoteIndex by remember { mutableIntStateOf((System.currentTimeMillis() / 86400000).toInt() % quotes.size) }
+    var quoteIndex by remember { mutableIntStateOf((System.currentTimeMillis() / 86400000).toInt() % DefaultIslamicReminders.list.size) }
 
     LaunchedEffect(Unit) {
         viewModel.refreshStatus()
@@ -103,7 +93,7 @@ fun HomeScreen(
 
             // Quote card
             QuoteCard(
-                quote = quotes[quoteIndex],
+                quote = DefaultIslamicReminders.list[quoteIndex],
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
 

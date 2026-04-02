@@ -33,15 +33,13 @@ class AyahRepositoryImpl @Inject constructor(
     override suspend fun getAyahByReference(surah: Int, ayah: Int): Result<Ayah> = withContext(Dispatchers.IO) {
         try {
             val reference = "$surah:$ayah"
-            val arabicResponse = quranApiService.getAyahArabic(reference)
             val englishResponse = quranApiService.getAyahEnglish(reference)
             
             val ayahData = Ayah(
-                surahNumber = arabicResponse.data.surah.number,
-                ayahNumber = arabicResponse.data.numberInSurah,
-                arabicText = arabicResponse.data.text,
+                surahNumber = englishResponse.data.surah.number,
+                ayahNumber = englishResponse.data.numberInSurah,
                 englishTranslation = englishResponse.data.text,
-                surahName = arabicResponse.data.surah.englishName
+                surahName = englishResponse.data.surah.englishName
             )
             Result.success(ayahData)
         } catch (e: Exception) {

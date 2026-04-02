@@ -14,7 +14,6 @@ import kotlin.random.Random
 data class AyahDto(
     val surahNumber: Int,
     val ayahNumber: Int,
-    val arabicText: String,
     val englishTranslation: String,
     val surahName: String
 )
@@ -40,7 +39,6 @@ class LocalAyahProvider @Inject constructor(
             Ayah(
                 surahNumber = dto.surahNumber,
                 ayahNumber = dto.ayahNumber,
-                arabicText = dto.arabicText,
                 englishTranslation = dto.englishTranslation,
                 surahName = dto.surahName
             )
