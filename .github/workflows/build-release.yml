@@ -26,17 +26,16 @@ jobs:
           cache: gradle
 
       - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
+        run: chmod +x gradlew
 
       - name: Build Release APK
-        working-directory: android
         run: ./gradlew assembleRelease
 
       - name: Sign APK
         id: sign_apk
         uses: ilharp/sign-android-release@v1
         with:
-          releaseDir: android/app/build/outputs/apk/release
+          releaseDir: app/build/outputs/apk/release
           signingKey: ${{ secrets.SIGNING_KEY }}
           keyAlias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
@@ -47,20 +46,20 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          cp "${{ steps.sign_apk.outputs.signedFile }}" "android/app/build/outputs/apk/release/screenrest-v${VERSION}.apk"
+          cp "${{ steps.sign_apk.outputs.signedFile }}" "app/build/outputs/apk/release/screenrest-v${VERSION}.apk"
 
       - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: screenrest-apk-v${{ steps.rename_apk.outputs.version }}
-          path: android/app/build/outputs/apk/release/screenrest-v${{ steps.rename_apk.outputs.version }}.apk
+          path: app/build/outputs/apk/release/screenrest-v${{ steps.rename_apk.outputs.version }}.apk
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: ScreenRest v${{ steps.rename_apk.outputs.version }}
-          files: android/app/build/outputs/apk/release/screenrest-v${{ steps.rename_apk.outputs.version }}.apk
+          files: app/build/outputs/apk/release/screenrest-v${{ steps.rename_apk.outputs.version }}.apk
           generate_release_notes: true
           draft: false
           prerelease: false
