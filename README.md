@@ -44,7 +44,8 @@ Since ScreenRest isn't on the Google Play Store, Android might show a security w
 4. **Allow** installation from that browser
 
 ### **Step 2: Download & Install**
-1. Download the ScreenRest APK file from the GitHub releases page
+1. Download the ScreenRest APK file from the [outputs directory](app/build/outputs/apk/) (or build from source as shown below)
+   - **Note**: I don't use GitHub releases. APK files are available directly in the repository's outputs folder after building.
 2. Open the downloaded file
 3. If you see a security warning, tap **"Install anyway"** or **"Proceed"**
 4. Follow the installation prompts
