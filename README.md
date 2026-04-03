@@ -44,11 +44,11 @@ Since ScreenRest isn't on the Google Play Store, Android might show a security w
 4. **Allow** installation from that browser
 
 ### **Step 2: Download & Install**
-1. Download the ScreenRest APK file from the [outputs directory](app/build/outputs/apk/) (or build from source as shown below)
-   - **Note**: I don't use GitHub releases. APK files are available directly in the repository's outputs folder after building.
-2. Open the downloaded file
-3. If you see a security warning, tap **"Install anyway"** or **"Proceed"**
-4. Follow the installation prompts
+1. Go to the [**Releases**](https://github.com/hozaifa1/screenrest-app/releases) page
+2. Download the latest `screenrest-vX.X.X.apk` file
+3. Open the downloaded file
+4. If you see a security warning, tap **"Install anyway"** or **"Proceed"**
+5. Follow the installation prompts
 
 ### **Step 3: Grant Permissions**
 ScreenRest needs a few permissions to work properly:
@@ -162,6 +162,24 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 # Or install directly
 ./gradlew installDebug
+```
+
+### **Build Release APK**
+```bash
+# Build release APK (unsigned, for local testing)
+./gradlew assembleRelease
+
+# The APK will be at: app/build/outputs/apk/release/app-release-unsigned.apk
+```
+
+### **Sign the APK (Optional)**
+To create a signed APK for distribution:
+```bash
+# Create a keystore (one-time setup)
+keytool -genkey -v -keystore screenrest.keystore -alias screenrest -keyalg RSA -keysize 2048 -validity 10000
+
+# Sign the APK
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore screenrest.keystore app/build/outputs/apk/release/app-release-unsigned.apk screenrest
 ```
 
 ---
@@ -306,7 +324,63 @@ copies or substantial portions of the Software.
 
 ---
 
-## 📈 Roadmap
+## � Automated Releases with GitHub Actions
+
+This project uses GitHub Actions to automatically build and release APK files when you push a version tag.
+
+### **How It Works**
+
+1. Push a tag like `v1.0.0` to trigger the workflow
+2. GitHub Actions builds a signed release APK
+3. The APK is automatically uploaded to the [Releases](https://github.com/hozaifa1/screenrest-app/releases) page
+
+### **Manual Steps Required (One-Time Setup)**
+
+You need to add your signing keystore as repository secrets:
+
+**Step 1: Create a Keystore**
+```bash
+keytool -genkey -v -keystore screenrest.keystore -alias screenrest -keyalg RSA -keysize 2048 -validity 10000
+```
+
+**Step 2: Encode the Keystore**
+```bash
+# On Linux/macOS
+base64 -i screenrest.keystore | pbcopy
+
+# On Windows PowerShell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("screenrest.keystore")) | Set-Clipboard
+```
+
+**Step 3: Add Secrets to GitHub**
+
+Go to **Settings → Secrets and variables → Actions** and add these secrets:
+
+| Secret Name | Value |
+|-------------|-------|
+| `SIGNING_KEY` | Base64-encoded keystore content |
+| `ALIAS` | Your keystore alias (e.g., `screenrest`) |
+| `KEY_STORE_PASSWORD` | Your keystore password |
+| `KEY_PASSWORD` | Your key password (same as keystore if you didn't set separate) |
+
+### **Creating a Release**
+
+```bash
+# Update version in app/build.gradle.kts (versionCode and versionName)
+# Then commit and push
+git add .
+git commit -m "Bump version to v1.1.0"
+
+# Create and push a tag
+git tag -a v1.1.0 -m "Release v1.1.0"
+git push origin v1.1.0
+```
+
+The workflow will automatically build and create a release with your APK attached.
+
+---
+
+## �📈 Roadmap
 
 ### **Planned Features**
 - [ ] Wear OS companion app
