@@ -86,8 +86,9 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     private var currentThemeMode by mutableStateOf(ThemeMode.SYSTEM)
     private var currentThemeColor by mutableStateOf(ThemeColor.TEAL)
     private var originalThemeColor: ThemeColor = ThemeColor.TEAL
-    
-    private var isInitialized = false
+
+    // Track current block duration to detect config changes
+    private var currentBlockDurationSeconds: Int = 30
     private var isCountdownRunning = false
     private var isScreenOn = true
     
@@ -130,43 +131,44 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (isInitialized) {
-            Log.w(TAG, "Service already initialized, ignoring duplicate start")
-            return START_NOT_STICKY
-        }
-        
         val duration = intent?.getIntExtra(EXTRA_DURATION_SECONDS, 30) ?: 30
-        Log.d(TAG, "Starting overlay with duration=$duration")
-        
-        isInitialized = true
+        Log.d(TAG, "Starting overlay with duration=$duration seconds")
+
         isOverlayActive = true
-        remainingSeconds = duration
-        
-        // Load message and theme BEFORE showing overlay to prevent rotation
+
         lifecycleScope.launch {
-            try {
-                currentThemeMode = settingsRepository.themeMode.first()
-                originalThemeColor = settingsRepository.themeColor.first()
-                
-                // Rotate theme dynamically
-                currentThemeColor = getNextThemeColor()
-                
-                currentDisplayMessage = getRandomDisplayMessageUseCase()
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading message", e)
-                currentDisplayMessage = DisplayMessage.IslamicReminder("Take a moment to rest your eyes and reflect.")
+            // If this is a new block with different duration, reset and restart
+            if (currentBlockDurationSeconds != duration || !isCountdownRunning) {
+                currentBlockDurationSeconds = duration
+                remainingSeconds = duration
+
+                // Load message and theme for new block
+                try {
+                    currentThemeMode = settingsRepository.themeMode.first()
+                    originalThemeColor = settingsRepository.themeColor.first()
+
+                    // Rotate theme dynamically
+                    currentThemeColor = getNextThemeColor()
+
+                    currentDisplayMessage = getRandomDisplayMessageUseCase()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error loading message", e)
+                    currentDisplayMessage = DisplayMessage.IslamicReminder("Take a moment to rest your eyes and reflect.")
+                }
+
+                // Show overlay if not already showing
+                if (overlayView == null) {
+                    showOverlay()
+                }
+
+                // Start countdown after brief delay
+                delay(200)
+                startCountdown(duration)
+            } else {
+                Log.d(TAG, "Block already running with same duration, continuing...")
             }
-            
-            // Now show overlay with loaded message
-            if (overlayView == null) {
-                showOverlay()
-            }
-            
-            // Start countdown after brief delay
-            delay(200)
-            startCountdown(duration)
         }
-        
+
         return START_NOT_STICKY
     }
 
@@ -281,17 +283,17 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "Service being destroyed")
-        
+
         isCountdownRunning = false
         countdownJob?.cancel()
         countdownJob = null
-        
+
         try {
             unregisterReceiver(screenReceiver)
         } catch (e: Exception) {
             Log.e(TAG, "Error unregistering screen receiver", e)
         }
-        
+
         try {
             if (overlayView != null && windowManager != null) {
                 windowManager?.removeView(overlayView)
@@ -300,27 +302,30 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
         } catch (e: Exception) {
             Log.e(TAG, "Error removing overlay", e)
         }
-        
+
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         isOverlayActive = false
-        isInitialized = false
+        // Reset duration tracking so next block starts fresh
+        currentBlockDurationSeconds = 30
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
     
     private suspend fun getNextThemeColor(): ThemeColor {
         val allColors = ThemeColor.values()
-        val currentIndex = allColors.indexOf(originalThemeColor)
-        
+
         // Get stored theme index from MessageIndexDataStore
         val messageIndexDataStore = com.screenrest.app.data.local.datastore.MessageIndexDataStore(this)
-        val themeIndex = messageIndexDataStore.themeIndex.first()
-        
-        // Calculate next theme based on rotation
-        val nextThemeIndex = (themeIndex + 1) % allColors.size
+        val currentStoredIndex = messageIndexDataStore.themeIndex.first()
+
+        // Calculate next theme based on rotation (skip to next color)
+        val nextThemeIndex = (currentStoredIndex + 1) % allColors.size
+
+        // Save the new index for next time
         messageIndexDataStore.incrementThemeIndex(nextThemeIndex)
-        
-        return allColors[themeIndex]
+
+        // Return the color at the NEW index (not the old one)
+        return allColors[nextThemeIndex]
     }
 }
 

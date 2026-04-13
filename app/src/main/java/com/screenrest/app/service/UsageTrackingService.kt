@@ -25,6 +25,10 @@ import com.screenrest.app.presentation.block.BlockActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -32,39 +36,40 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class UsageTrackingService : LifecycleService() {
-    
+
     companion object {
         private const val TAG = "UsageTrackingService"
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "screenrest_tracking"
         private const val POLLING_INTERVAL_MS = 1_000L
-        
+        private const val BLOCK_COOLDOWN_MS = 3_000L
+
         @Volatile
         var currentUsageMs: Long = 0L
             private set
-        
-        @Volatile
-        var thresholdMs: Long = 0L
-            private set
-        
-        @Volatile
-        private var hasTriggeredBlockThisCycle = false
     }
-    
+
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var permissionChecker: PermissionChecker
-    
+
     private var trackingJob: Job? = null
     private var configJob: Job? = null
     private var whitelistJob: Job? = null
+    private var startupJob: Job? = null
+
+    // Use StateFlow for atomic config access - prevents race conditions
+    private val _breakConfigFlow = MutableStateFlow(BreakConfig())
+    private val breakConfigFlow: StateFlow<BreakConfig> = _breakConfigFlow.asStateFlow()
+
+    private var hasTriggeredBlockThisCycle = false
+    private var lastBlockEndTimestamp: Long = 0L
     private var accumulatedUsageMs: Long = 0L
     private var lastScreenOnTimestamp: Long = 0L
     private var isScreenOn: Boolean = true
     private var isInWhitelistApp: Boolean = false
     private var whitelistPauseStartTime: Long = 0L
     private var totalWhitelistPauseMs: Long = 0L
-    
-    private var cachedBreakConfig: BreakConfig = BreakConfig()
+
     private var whitelistApps: Set<String> = emptySet()
     
     private val powerManager by lazy {
@@ -128,13 +133,12 @@ class UsageTrackingService : LifecycleService() {
         val notification = createNotification("Monitoring screen time...")
         startForeground(NOTIFICATION_ID, notification)
         
-        // Start config collector
+        // Start config collector - use StateFlow for atomic access
         configJob?.cancel()
         configJob = lifecycleScope.launch {
             settingsRepository.breakConfig.collect { config ->
-                cachedBreakConfig = config
-                thresholdMs = config.usageThresholdSeconds * 1_000L
-                Log.d(TAG, "Config updated: threshold=${config.usageThresholdSeconds}s")
+                _breakConfigFlow.value = config
+                Log.d(TAG, "Config updated: threshold=${config.usageThresholdSeconds}s, duration=${config.blockDurationSeconds}s")
             }
         }
         
@@ -200,25 +204,27 @@ class UsageTrackingService : LifecycleService() {
     }
     
     private suspend fun performTrackingCycle() {
-        val breakConfig = cachedBreakConfig
-        
+        // Get atomic snapshot of current config to ensure consistency throughout cycle
+        val breakConfig = breakConfigFlow.value
+        val thresholdMs = breakConfig.usageThresholdSeconds * 1_000L
+
         // Detect when block overlay has finished - don't rely only on broadcast
         if (hasTriggeredBlockThisCycle && !BlockOverlayService.isOverlayActive) {
             Log.d(TAG, "Block cycle ended (overlay inactive), resetting tracking")
             resetAfterBlock()
         }
-        
+
         // Check if user is in a whitelisted app
         checkWhitelistStatus()
-        
+
         currentUsageMs = calculateCurrentUsage()
-        
+
         val thresholdReached = currentUsageMs >= thresholdMs
-        
+
         if (thresholdReached && !isInWhitelistApp && !hasTriggeredBlockThisCycle && !BlockAccessibilityService.isBlockActive && !BlockOverlayService.isOverlayActive && isScreenOn) {
-            Log.w(TAG, "THRESHOLD REACHED! Usage=${currentUsageMs}ms >= ${thresholdMs}ms")
+            Log.w(TAG, "THRESHOLD REACHED! Usage=${currentUsageMs}ms >= ${thresholdMs}ms, duration=${breakConfig.blockDurationSeconds}s")
             hasTriggeredBlockThisCycle = true
-            
+
             if (breakConfig.locationEnabled) {
                 val inLocation = isInTargetLocation(breakConfig)
                 if (inLocation) {
