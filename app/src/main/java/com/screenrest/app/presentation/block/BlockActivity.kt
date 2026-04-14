@@ -192,7 +192,6 @@ private fun SimpleBlockScreen(remainingSeconds: Int) {
     val gradientTop = if (isDark) palette.gradientTopDark else palette.gradientTopLight
     val gradientBottom = if (isDark) palette.gradientBottomDark else palette.gradientBottomLight
     val timerColor = if (isDark) palette.primaryLight else palette.primaryVariant
-    val messageColor = if (isDark) palette.textOnDark else palette.textPrimary
     val subtitleColor = if (isDark) palette.textMuted else palette.textSecondary
     
     Box(
@@ -232,16 +231,6 @@ private fun SimpleBlockScreen(remainingSeconds: Int) {
             )
 
             Spacer(modifier = Modifier.height(40.dp))
-            
-            Text(
-                text = "Take a moment to rest your eyes and reflect.",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Normal,
-                color = messageColor,
-                textAlign = TextAlign.Center,
-                lineHeight = 34.sp,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
         }
     }
 }

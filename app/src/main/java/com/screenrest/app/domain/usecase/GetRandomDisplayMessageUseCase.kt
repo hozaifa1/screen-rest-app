@@ -15,21 +15,21 @@ class GetRandomDisplayMessageUseCase @Inject constructor(
     private val messageIndexDataStore: MessageIndexDataStore
 ) {
 
-    suspend operator fun invoke(): DisplayMessage {
+    suspend operator fun invoke(): DisplayMessage? {
         val breakConfig = settingsRepository.breakConfig.first()
         val quranEnabled = breakConfig.quranMessagesEnabled
         val islamicEnabled = breakConfig.islamicRemindersEnabled
-        
+
         // Ensure defaults are populated
         ayahDatabaseRepository.ensureDefaults()
         islamicReminderRepository.ensureDefaults()
-        
+
         val ayahs = ayahDatabaseRepository.getAllAyahs().first()
         val reminders = islamicReminderRepository.getAllReminders().first()
-        
+
         // Get last message type (0 = Reminder, 1 = Ayah)
         val lastMessageType = messageIndexDataStore.lastMessageType.first()
-        
+
         // Sequential logic: alternate between Ayah and Reminder
         val shouldShowAyah = if (lastMessageType == 0) {
             // Last was Reminder, show Ayah if enabled
@@ -42,27 +42,45 @@ class GetRandomDisplayMessageUseCase @Inject constructor(
                 quranEnabled && ayahs.isNotEmpty() // Show Ayah again
             }
         }
-        
+
         return if (shouldShowAyah) {
             val ayahIndex = messageIndexDataStore.ayahIndex.first()
-            val nextIndex = (ayahIndex + 1) % ayahs.size
+            val safeIndex = if (ayahs.isNotEmpty()) ayahIndex % ayahs.size else 0
+            val nextIndex = (safeIndex + 1) % ayahs.size
             messageIndexDataStore.incrementAyahIndex(nextIndex)
             messageIndexDataStore.setLastMessageType(1)
-            DisplayMessage.QuranAyah(ayahs[ayahIndex])
+            DisplayMessage.QuranAyah(ayahs[safeIndex])
         } else if (islamicEnabled && reminders.isNotEmpty()) {
             val reminderIndex = messageIndexDataStore.reminderIndex.first()
-            val nextIndex = (reminderIndex + 1) % reminders.size
+            val safeIndex = if (reminders.isNotEmpty()) reminderIndex % reminders.size else 0
+            val nextIndex = (safeIndex + 1) % reminders.size
             messageIndexDataStore.incrementReminderIndex(nextIndex)
             messageIndexDataStore.setLastMessageType(0)
-            DisplayMessage.IslamicReminder(reminders[reminderIndex].text)
+            DisplayMessage.IslamicReminder(reminders[safeIndex].text)
         } else if (quranEnabled && ayahs.isNotEmpty()) {
             val ayahIndex = messageIndexDataStore.ayahIndex.first()
-            val nextIndex = (ayahIndex + 1) % ayahs.size
+            val safeIndex = if (ayahs.isNotEmpty()) ayahIndex % ayahs.size else 0
+            val nextIndex = (safeIndex + 1) % ayahs.size
             messageIndexDataStore.incrementAyahIndex(nextIndex)
             messageIndexDataStore.setLastMessageType(1)
-            DisplayMessage.QuranAyah(ayahs[ayahIndex])
+            DisplayMessage.QuranAyah(ayahs[safeIndex])
+        } else if (reminders.isNotEmpty()) {
+            // Absolute fallback: use any available reminder even if toggled off
+            val reminderIndex = messageIndexDataStore.reminderIndex.first()
+            val safeIndex = reminderIndex % reminders.size
+            val nextIndex = (safeIndex + 1) % reminders.size
+            messageIndexDataStore.incrementReminderIndex(nextIndex)
+            DisplayMessage.IslamicReminder(reminders[safeIndex].text)
+        } else if (ayahs.isNotEmpty()) {
+            // Absolute fallback: use any available ayah even if toggled off
+            val ayahIndex = messageIndexDataStore.ayahIndex.first()
+            val safeIndex = ayahIndex % ayahs.size
+            val nextIndex = (safeIndex + 1) % ayahs.size
+            messageIndexDataStore.incrementAyahIndex(nextIndex)
+            DisplayMessage.QuranAyah(ayahs[safeIndex])
         } else {
-            DisplayMessage.IslamicReminder("Take a moment to rest your eyes and reflect.")
+            // Truly nothing available - return null
+            null
         }
     }
 }

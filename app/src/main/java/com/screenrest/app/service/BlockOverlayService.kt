@@ -44,6 +44,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.screenrest.app.data.local.datastore.MessageIndexDataStore
 import com.screenrest.app.data.repository.SettingsRepository
 import com.screenrest.app.domain.model.DisplayMessage
 import com.screenrest.app.domain.model.ThemeColor
@@ -73,6 +74,9 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     
     @Inject
     lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    lateinit var messageIndexDataStore: MessageIndexDataStore
 
     private var windowManager: WindowManager? = null
     private var overlayView: ComposeView? = null
@@ -142,18 +146,21 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
                 currentBlockDurationSeconds = duration
                 remainingSeconds = duration
 
-                // Load message and theme for new block
+                // Load theme settings (separate try-catch so theme errors don't prevent message loading)
                 try {
                     currentThemeMode = settingsRepository.themeMode.first()
                     originalThemeColor = settingsRepository.themeColor.first()
-
-                    // Rotate theme dynamically
                     currentThemeColor = getNextThemeColor()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error loading theme", e)
+                }
 
+                // Load display message from user's configured list
+                try {
                     currentDisplayMessage = getRandomDisplayMessageUseCase()
                 } catch (e: Exception) {
                     Log.e(TAG, "Error loading message", e)
-                    currentDisplayMessage = DisplayMessage.IslamicReminder("Take a moment to rest your eyes and reflect.")
+                    currentDisplayMessage = null
                 }
 
                 // Show overlay if not already showing
@@ -314,17 +321,15 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     private suspend fun getNextThemeColor(): ThemeColor {
         val allColors = ThemeColor.values()
 
-        // Get stored theme index from MessageIndexDataStore
-        val messageIndexDataStore = com.screenrest.app.data.local.datastore.MessageIndexDataStore(this)
+        // Use injected singleton MessageIndexDataStore - never create a manual instance
         val currentStoredIndex = messageIndexDataStore.themeIndex.first()
 
-        // Calculate next theme based on rotation (skip to next color)
+        // Calculate next theme based on rotation
         val nextThemeIndex = (currentStoredIndex + 1) % allColors.size
 
         // Save the new index for next time
         messageIndexDataStore.incrementThemeIndex(nextThemeIndex)
 
-        // Return the color at the NEW index (not the old one)
         return allColors[nextThemeIndex]
     }
 }
@@ -438,15 +443,7 @@ private fun BlockOverlayContent(
                     )
                 }
                 null -> {
-                    Text(
-                        text = "Take a moment to rest your eyes and reflect.",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = messageColor,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 34.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    // No message available - show nothing rather than hardcoded text
                 }
             }
         }
