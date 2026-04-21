@@ -28,7 +28,7 @@ class OnboardingViewModel @Inject constructor(
     
     fun nextStep() {
         val currentStep = _uiState.value.currentStep
-        if (currentStep < 5) {
+        if (currentStep < 7) {
             _uiState.value = _uiState.value.copy(currentStep = currentStep + 1)
         }
     }

@@ -26,7 +26,7 @@ fun OnboardingScreen(
                 .padding(paddingValues)
         ) {
             LinearProgressIndicator(
-                progress = { (uiState.currentStep + 1) / 5f },
+                progress = { (uiState.currentStep + 1) / 7f },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp),
@@ -59,7 +59,19 @@ fun OnboardingScreen(
                         onBack = { viewModel.previousStep() },
                         onRefresh = { viewModel.refreshPermissions() }
                     )
-                    4 -> CompleteStep(
+                    4 -> AccessibilityStep(
+                        isGranted = uiState.permissionStatus.accessibility,
+                        onNext = { viewModel.nextStep() },
+                        onBack = { viewModel.previousStep() },
+                        onRefresh = { viewModel.refreshPermissions() }
+                    )
+                    5 -> DeviceAdminStep(
+                        isGranted = uiState.permissionStatus.deviceAdmin,
+                        onNext = { viewModel.nextStep() },
+                        onBack = { viewModel.previousStep() },
+                        onRefresh = { viewModel.refreshPermissions() }
+                    )
+                    6 -> CompleteStep(
                         permissionStatus = uiState.permissionStatus,
                         enforcementLevel = uiState.enforcementLevel,
                         onComplete = {

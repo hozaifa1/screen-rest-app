@@ -6,5 +6,6 @@ data class PermissionStatus(
     val accessibility: Boolean = false,
     val notification: Boolean = false,
     val location: Boolean = false,
-    val backgroundLocation: Boolean = false
+    val backgroundLocation: Boolean = false,
+    val deviceAdmin: Boolean = false
 )

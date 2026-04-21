@@ -9,7 +9,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,7 +38,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToBlockTime: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -124,6 +127,16 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Phone Block Time card
+            BlockTimeCard(
+                nextBlockSummary = uiState.nextBlockSummary,
+                activeProfiles = uiState.activeBlockProfiles,
+                onClick = onNavigateToBlockTime,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             // Permission warnings (compact)
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -131,22 +144,95 @@ fun HomeScreen(
             ) {
                 if (!uiState.permissionStatus.usageStats) {
                     PermissionWarningCard(
-                        title = "Usage Access Required",
-                        description = "Cannot track screen time without this permission",
+                        title = "Usage Access",
+                        description = "Screen time tracking is disabled without this",
                         permissionType = "usageStats"
                     )
                 }
 
                 if (!uiState.permissionStatus.overlay) {
                     PermissionWarningCard(
-                        title = "Overlay Permission Required",
-                        description = "Breaks will only show as notifications without this",
+                        title = "Overlay Permission",
+                        description = "Break screens and scheduled blocks cannot display without this",
                         permissionType = "overlay"
+                    )
+                }
+
+                if (!uiState.permissionStatus.accessibility) {
+                    PermissionWarningCard(
+                        title = "Accessibility Service",
+                        description = "Break screens can be bypassed without this",
+                        permissionType = "accessibility"
+                    )
+                }
+
+                if (!uiState.permissionStatus.notification) {
+                    PermissionWarningCard(
+                        title = "Notifications",
+                        description = "Background monitoring may be interrupted without this",
+                        permissionType = "notification"
+                    )
+                }
+
+                if (!uiState.permissionStatus.deviceAdmin) {
+                    PermissionWarningCard(
+                        title = "Device Admin",
+                        description = "App can be uninstalled during blocks without this",
+                        permissionType = "deviceAdmin"
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun BlockTimeCard(
+    nextBlockSummary: String,
+    activeProfiles: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.DateRange,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Block Phone Use",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = nextBlockSummary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+                if (activeProfiles > 0) {
+                    Text(
+                        text = "$activeProfiles profile${if (activeProfiles > 1) "s" else ""} active",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                    )
+                }
+            }
         }
     }
 }

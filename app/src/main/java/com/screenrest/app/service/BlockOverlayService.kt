@@ -1,14 +1,19 @@
 package com.screenrest.app.service
 
 import android.app.Service
+import android.app.admin.DevicePolicyManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
+import android.view.MotionEvent
+import android.view.View
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
@@ -44,6 +49,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.screenrest.app.util.DeviceAdminHelper
 import com.screenrest.app.data.local.datastore.MessageIndexDataStore
 import com.screenrest.app.data.repository.SettingsRepository
 import com.screenrest.app.domain.model.DisplayMessage
@@ -63,6 +69,12 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     companion object {
         private const val TAG = "BlockOverlayService"
         const val EXTRA_DURATION_SECONDS = "duration_seconds"
+        const val EXTRA_BLOCK_MODE = "block_mode"
+        const val EXTRA_CUSTOM_MESSAGE = "custom_message"
+        const val EXTRA_END_TIME_MS = "end_time_ms"
+        
+        const val MODE_USAGE = "usage"
+        const val MODE_SCHEDULED = "scheduled"
         
         @Volatile
         var isOverlayActive = false
@@ -80,6 +92,9 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
 
     private var windowManager: WindowManager? = null
     private var overlayView: ComposeView? = null
+    private var statusBarGuardView: android.view.View? = null
+    private val statusBarHandler = Handler(Looper.getMainLooper())
+    private val permissionWatchdogHandler = Handler(Looper.getMainLooper())
     private val lifecycleRegistry = LifecycleRegistry(this)
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
     private val store = ViewModelStore()
@@ -92,9 +107,14 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     private var originalThemeColor: ThemeColor = ThemeColor.TEAL
 
     // Track current block duration to detect config changes
-    private var currentBlockDurationSeconds: Int = 30
+    private var currentBlockDurationSeconds: Int = -1
     private var isCountdownRunning = false
     private var isScreenOn = true
+    
+    // Scheduled block mode tracking
+    private var currentBlockMode: String = MODE_USAGE
+    private var scheduledEndTimeMs: Long = 0L
+    private var customMessageText: String? = null
     
     private val powerManager by lazy {
         getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -129,16 +149,27 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
         }
-        registerReceiver(screenReceiver, screenFilter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            registerReceiver(screenReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screenReceiver, screenFilter)
+        }
         
         Log.d(TAG, "BlockOverlayService created, screenOn=$isScreenOn")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val duration = intent?.getIntExtra(EXTRA_DURATION_SECONDS, 30) ?: 30
-        Log.d(TAG, "Starting overlay with duration=$duration seconds")
+        val blockMode = intent?.getStringExtra(EXTRA_BLOCK_MODE) ?: MODE_USAGE
+        val endTimeMs = intent?.getLongExtra(EXTRA_END_TIME_MS, 0L) ?: 0L
+        val incomingCustomMessage = intent?.getStringExtra(EXTRA_CUSTOM_MESSAGE)
+        
+        Log.d(TAG, "Starting overlay with duration=$duration mode=$blockMode endTimeMs=$endTimeMs")
 
         isOverlayActive = true
+        currentBlockMode = blockMode
+        scheduledEndTimeMs = endTimeMs
+        customMessageText = incomingCustomMessage
 
         lifecycleScope.launch {
             // If this is a new block with different duration, reset and restart
@@ -155,9 +186,13 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
                     Log.e(TAG, "Error loading theme", e)
                 }
 
-                // Load display message from user's configured list
+                // Load display message - use custom message for scheduled blocks if provided
                 try {
-                    currentDisplayMessage = getRandomDisplayMessageUseCase()
+                    if (blockMode == MODE_SCHEDULED && incomingCustomMessage != null) {
+                        currentDisplayMessage = DisplayMessage.IslamicReminder(incomingCustomMessage)
+                    } else {
+                        currentDisplayMessage = getRandomDisplayMessageUseCase()
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error loading message", e)
                     currentDisplayMessage = null
@@ -203,7 +238,8 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
                                 ThemeMode.LIGHT -> false
                                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                             },
-                            themeColor = currentThemeColor
+                            themeColor = currentThemeColor,
+                            isScheduledBlock = currentBlockMode == MODE_SCHEDULED
                         )
                     }
                 }
@@ -236,6 +272,16 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
             }
 
             windowManager?.addView(overlayView, params)
+            
+            // Add status bar guard overlay to block swipe-down gesture
+            addStatusBarGuard()
+            
+            // Start collapsing notification shade periodically
+            startCollapsingPanels()
+            
+            // Start permission watchdog — locks device if overlay permission is revoked mid-block
+            startPermissionWatchdog()
+            
             isOverlayActive = true
             lifecycleRegistry.currentState = Lifecycle.State.STARTED
             lifecycleRegistry.currentState = Lifecycle.State.RESUMED
@@ -245,6 +291,92 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
             Log.e(TAG, "Error showing overlay", e)
             stopSelf()
         }
+    }
+
+    private fun addStatusBarGuard() {
+        try {
+            val guard = object : View(this) {
+                override fun onTouchEvent(event: MotionEvent?): Boolean {
+                    return true // Consume all touches
+                }
+            }
+            guard.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+
+            val layoutFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
+            }
+
+            val guardParams = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                300,
+                layoutFlag,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.TOP or Gravity.START
+                x = 0
+                y = -100
+            }
+
+            windowManager?.addView(guard, guardParams)
+            statusBarGuardView = guard
+            Log.d(TAG, "Status bar guard added")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding status bar guard", e)
+        }
+    }
+
+    private val collapseRunnable = object : Runnable {
+        override fun run() {
+            if (isOverlayActive) {
+                collapsePanels()
+                statusBarHandler.postDelayed(this, 100)
+            }
+        }
+    }
+
+    private fun startCollapsingPanels() {
+        statusBarHandler.post(collapseRunnable)
+    }
+
+    private fun stopCollapsingPanels() {
+        statusBarHandler.removeCallbacks(collapseRunnable)
+    }
+
+    private fun collapsePanels() {
+        try {
+            @Suppress("WrongConstant")
+            val statusBarService = getSystemService("statusbar")
+            statusBarService?.javaClass?.getMethod("collapsePanels")?.invoke(statusBarService)
+        } catch (e: Exception) {
+            // Expected on some devices / Android versions
+        }
+    }
+
+    // --- Permission watchdog: detects overlay permission revocation during active block ---
+    private val permissionWatchdogRunnable = object : Runnable {
+        override fun run() {
+            if (isOverlayActive && isCountdownRunning) {
+                if (!android.provider.Settings.canDrawOverlays(this@BlockOverlayService)) {
+                    Log.w(TAG, "Overlay permission REVOKED during active block — locking device")
+                    DeviceAdminHelper.forceLockScreen(this@BlockOverlayService)
+                }
+            }
+            permissionWatchdogHandler.postDelayed(this, 1_000L)
+        }
+    }
+
+    private fun startPermissionWatchdog() {
+        permissionWatchdogHandler.post(permissionWatchdogRunnable)
+    }
+
+    private fun stopPermissionWatchdog() {
+        permissionWatchdogHandler.removeCallbacks(permissionWatchdogRunnable)
     }
 
     private fun startCountdown(durationSeconds: Int) {
@@ -258,14 +390,26 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
         
         countdownJob = lifecycleScope.launch {
             remainingSeconds = durationSeconds
-            Log.d(TAG, "Countdown started: $durationSeconds seconds")
+            Log.d(TAG, "Countdown started: $durationSeconds seconds, mode=$currentBlockMode")
             
-            while (remainingSeconds > 0 && isCountdownRunning) {
-                delay(1000)
-                if (isScreenOn) {
-                    remainingSeconds--
-                } else {
-                    Log.d(TAG, "Countdown paused (screen off), remaining=$remainingSeconds")
+            if (currentBlockMode == MODE_SCHEDULED && scheduledEndTimeMs > 0L) {
+                // Scheduled block: use absolute end time, countdown even when screen is off
+                while (isCountdownRunning) {
+                    val now = System.currentTimeMillis()
+                    val remaining = ((scheduledEndTimeMs - now) / 1000).toInt()
+                    if (remaining <= 0) break
+                    remainingSeconds = remaining
+                    delay(1000)
+                }
+            } else {
+                // Usage-based block: pause countdown when screen is off
+                while (remainingSeconds > 0 && isCountdownRunning) {
+                    delay(1000)
+                    if (isScreenOn) {
+                        remainingSeconds--
+                    } else {
+                        Log.d(TAG, "Countdown paused (screen off), remaining=$remainingSeconds")
+                    }
                 }
             }
             
@@ -302,6 +446,14 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
         }
 
         try {
+            stopCollapsingPanels()
+            stopPermissionWatchdog()
+            
+            if (statusBarGuardView != null && windowManager != null) {
+                windowManager?.removeView(statusBarGuardView)
+                statusBarGuardView = null
+            }
+            
             if (overlayView != null && windowManager != null) {
                 windowManager?.removeView(overlayView)
                 overlayView = null
@@ -313,7 +465,7 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         isOverlayActive = false
         // Reset duration tracking so next block starts fresh
-        currentBlockDurationSeconds = 30
+        currentBlockDurationSeconds = -1
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -339,7 +491,8 @@ private fun BlockOverlayContent(
     remainingSeconds: Int,
     displayMessage: DisplayMessage?,
     isDarkTheme: Boolean,
-    themeColor: ThemeColor = ThemeColor.TEAL
+    themeColor: ThemeColor = ThemeColor.TEAL,
+    isScheduledBlock: Boolean = false
 ) {
     val minutes = remainingSeconds / 60
     val seconds = remainingSeconds % 60
@@ -387,12 +540,15 @@ private fun BlockOverlayContent(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = "Take a break",
-                fontSize = 14.sp,
-                color = subtitleColor,
-                fontWeight = FontWeight.Medium
-            )
+            // No subtitle for scheduled blocks (spec requirement)
+            if (!isScheduledBlock) {
+                Text(
+                    text = "Take a break",
+                    fontSize = 14.sp,
+                    color = subtitleColor,
+                    fontWeight = FontWeight.Medium
+                )
+            }
 
             Spacer(modifier = Modifier.height(40.dp))
 
@@ -445,6 +601,23 @@ private fun BlockOverlayContent(
                 null -> {
                     // No message available - show nothing rather than hardcoded text
                 }
+            }
+
+            // Tamper warning — only shown on scheduled profile blocks
+            if (isScheduledBlock) {
+                Spacer(modifier = Modifier.height(48.dp))
+                
+                Text(
+                    text = "Disabling \"Display over other apps\" will lock your device until this block ends.",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = subtitleColor.copy(alpha = 0.55f),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 16.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                )
             }
         }
     }

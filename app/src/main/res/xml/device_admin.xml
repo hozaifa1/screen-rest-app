@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <!-- Minimal policies — we only want uninstall protection -->
+        <!-- force-lock is useful for "lock device" feature if needed later -->
+        <force-lock />
+    </uses-policies>
+</device-admin>

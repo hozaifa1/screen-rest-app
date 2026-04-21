@@ -9,8 +9,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Text
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.screenrest.app.data.local.datastore.SettingsDataStore
 
 @Composable
@@ -44,6 +46,9 @@ fun NavGraph(
             com.screenrest.app.presentation.main.HomeScreen(
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToBlockTime = {
+                    navController.navigate(Screen.BlockTime.route)
                 }
             )
         }
@@ -109,6 +114,35 @@ fun NavGraph(
             ) {
                 Text("About Screen - Coming in Part 3")
             }
+        }
+        
+        composable(Screen.BlockTime.route) {
+            com.screenrest.app.presentation.blocktime.BlockTimeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEditor = { profileId ->
+                    navController.navigate(Screen.BlockTimeEditor.createRoute(profileId))
+                },
+                onNavigateToQuickBlock = {
+                    navController.navigate(Screen.QuickBlock.route)
+                }
+            )
+        }
+
+        composable(Screen.QuickBlock.route) {
+            com.screenrest.app.presentation.blocktime.QuickBlockScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(
+            route = Screen.BlockTimeEditor.route,
+            arguments = listOf(navArgument("profileId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val profileId = backStackEntry.arguments?.getLong("profileId") ?: -1L
+            com.screenrest.app.presentation.blocktime.BlockTimeProfileEditorScreen(
+                profileId = profileId,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.screenrest.app.data.local.database.AppDatabase
 import com.screenrest.app.data.local.database.dao.AyahDao
+import com.screenrest.app.data.local.database.dao.BlockTimeProfileDao
 import com.screenrest.app.data.local.database.dao.CustomMessageDao
 import com.screenrest.app.data.local.database.dao.IslamicReminderDao
 import dagger.Module
@@ -45,5 +46,11 @@ object DatabaseModule {
     @Singleton
     fun provideAyahDao(database: AppDatabase): AyahDao {
         return database.ayahDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideBlockTimeProfileDao(database: AppDatabase): BlockTimeProfileDao {
+        return database.blockTimeProfileDao()
     }
 }

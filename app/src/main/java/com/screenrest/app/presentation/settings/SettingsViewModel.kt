@@ -18,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val updateBreakConfigUseCase: UpdateBreakConfigUseCase
+    private val updateBreakConfigUseCase: UpdateBreakConfigUseCase,
+    private val blockTimeRepository: com.screenrest.app.data.repository.BlockTimeRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -34,15 +35,17 @@ class SettingsViewModel @Inject constructor(
                 settingsRepository.breakConfig,
                 settingsRepository.themeMode,
                 settingsRepository.themeColor,
-                settingsRepository.whitelistApps
-            ) { config, theme, color, whitelist ->
-                SettingsData(config, theme, color, whitelist)
+                settingsRepository.whitelistApps,
+                settingsRepository.getAutoLockBeforeBlock()
+            ) { config, theme, color, whitelist, autoLock ->
+                SettingsData(config, theme, color, whitelist, autoLock)
             }.collect { data ->
                 _uiState.value = _uiState.value.copy(
                     breakConfig = data.config,
                     themeMode = data.theme,
                     themeColor = data.color,
-                    whitelistApps = data.whitelist
+                    whitelistApps = data.whitelist,
+                    autoLockBeforeBlock = data.autoLock
                 )
             }
         }
@@ -52,7 +55,8 @@ class SettingsViewModel @Inject constructor(
         val config: BreakConfig,
         val theme: ThemeMode,
         val color: ThemeColor,
-        val whitelist: Set<String>
+        val whitelist: Set<String>,
+        val autoLock: Boolean
     )
     
     fun updateTimers(thresholdSeconds: Int, durationSeconds: Int) {
@@ -117,6 +121,36 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
+    
+    fun updateAutoLockBeforeBlock(enabled: Boolean) {
+        viewModelScope.launch {
+            if (!enabled) {
+                // Check if any block is within 30 minutes — if so, prevent turning off
+                val profiles = blockTimeRepository.getEnabledProfilesOnce()
+                val now = java.time.LocalTime.now()
+                val today = java.time.LocalDate.now().dayOfWeek.value
+                val nowMinutes = now.hour * 60 + now.minute
+
+                val blockWithin30Min = profiles.any { profile ->
+                    today in profile.daysOfWeek && 
+                    profile.startMinuteOfDay > nowMinutes &&
+                    (profile.startMinuteOfDay - nowMinutes) <= 30
+                }
+
+                if (blockWithin30Min) {
+                    _uiState.value = _uiState.value.copy(
+                        showAutoLockWarning = true
+                    )
+                    return@launch
+                }
+            }
+            settingsRepository.setAutoLockBeforeBlock(enabled)
+        }
+    }
+
+    fun dismissAutoLockWarning() {
+        _uiState.value = _uiState.value.copy(showAutoLockWarning = false)
+    }
 }
 
 data class SettingsUiState(
@@ -125,5 +159,7 @@ data class SettingsUiState(
     val themeColor: ThemeColor = ThemeColor.TEAL,
     val whitelistApps: Set<String> = emptySet(),
     val showLongDurationWarning: Boolean = false,
-    val showShortThresholdWarning: Boolean = false
+    val showShortThresholdWarning: Boolean = false,
+    val autoLockBeforeBlock: Boolean = false,
+    val showAutoLockWarning: Boolean = false
 )

@@ -42,6 +42,7 @@ class SettingsDataStore @Inject constructor(
         val ISLAMIC_REMINDERS_ENABLED = booleanPreferencesKey("islamic_reminders_enabled")
         val LAST_BREAK_TIMESTAMP = longPreferencesKey("last_break_timestamp")
         val WHITELIST_APPS = stringSetPreferencesKey("whitelist_apps")
+        val BT_AUTO_LOCK_BEFORE = booleanPreferencesKey("bt_auto_lock_before_block")
     }
 
     val breakConfig: Flow<BreakConfig> = context.dataStore.data.map { preferences ->
@@ -79,6 +80,10 @@ class SettingsDataStore @Inject constructor(
 
     val whitelistApps: Flow<Set<String>> = context.dataStore.data.map { preferences ->
         preferences[PreferencesKeys.WHITELIST_APPS] ?: emptySet()
+    }
+
+    val autoLockBeforeBlock: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.BT_AUTO_LOCK_BEFORE] ?: false
     }
 
     suspend fun updateBreakConfig(config: BreakConfig) {
@@ -141,6 +146,12 @@ class SettingsDataStore @Inject constructor(
     suspend fun setWhitelistApps(packageNames: Set<String>) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.WHITELIST_APPS] = packageNames
+        }
+    }
+
+    suspend fun setAutoLockBeforeBlock(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.BT_AUTO_LOCK_BEFORE] = enabled
         }
     }
 }

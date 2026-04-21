@@ -10,4 +10,9 @@ sealed class Screen(val route: String) {
     object AyahList : Screen("ayah_list")
     object Permissions : Screen("permissions")
     object About : Screen("about")
+    object BlockTime : Screen("block_time")
+    object BlockTimeEditor : Screen("block_time_editor/{profileId}") {
+        fun createRoute(profileId: Long = -1L) = "block_time_editor/$profileId"
+    }
+    object QuickBlock : Screen("quick_block")
 }

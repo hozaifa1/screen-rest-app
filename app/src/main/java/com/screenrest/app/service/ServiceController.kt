@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.content.ContextCompat
 
 object ServiceController {
     
@@ -19,6 +20,17 @@ object ServiceController {
     fun stopTracking(context: Context) {
         val intent = Intent(context, UsageTrackingService::class.java)
         context.stopService(intent)
+    }
+    
+    /**
+     * Start the BlockTimeSchedulerService. Must be called:
+     * - On app launch (if onboarding complete)
+     * - After saving/deleting/toggling a block time profile
+     * - On boot (via BootReceiver)
+     */
+    fun startBlockTimeScheduler(context: Context) {
+        val intent = Intent(context, BlockTimeSchedulerService::class.java)
+        ContextCompat.startForegroundService(context, intent)
     }
     
     fun isRunning(context: Context): Boolean {

@@ -10,6 +10,8 @@ import com.screenrest.app.data.repository.IslamicReminderRepository
 import com.screenrest.app.data.repository.IslamicReminderRepositoryImpl
 import com.screenrest.app.data.repository.SettingsRepository
 import com.screenrest.app.data.repository.SettingsRepositoryImpl
+import com.screenrest.app.data.repository.BlockTimeRepository
+import com.screenrest.app.data.repository.BlockTimeRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -49,4 +51,10 @@ abstract class RepositoryModule {
     abstract fun bindIslamicReminderRepository(
         islamicReminderRepositoryImpl: IslamicReminderRepositoryImpl
     ): IslamicReminderRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBlockTimeRepository(
+        blockTimeRepositoryImpl: BlockTimeRepositoryImpl
+    ): BlockTimeRepository
 }

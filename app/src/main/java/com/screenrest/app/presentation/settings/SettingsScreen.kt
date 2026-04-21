@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -78,6 +79,19 @@ fun SettingsScreen(
     if (uiState.showShortThresholdWarning) {
         ShortThresholdWarningDialog(
             onDismiss = { viewModel.dismissShortThresholdWarning() }
+        )
+    }
+
+    if (uiState.showAutoLockWarning) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissAutoLockWarning() },
+            title = { Text("Cannot Disable") },
+            text = { Text("Auto-lock cannot be turned off when a block starts within 30 minutes.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissAutoLockWarning() }) {
+                    Text("OK")
+                }
+            }
         )
     }
 
@@ -135,6 +149,13 @@ fun SettingsScreen(
             WhitelistAppsCard(
                 whitelistCount = uiState.whitelistApps.size,
                 onManageWhitelist = { showWhitelistDialog = true }
+            )
+
+            // Block Phone Use section
+            SectionHeader("Block Phone Use")
+            BlockTimeSettingsCard(
+                autoLockEnabled = uiState.autoLockBeforeBlock,
+                onAutoLockToggle = { viewModel.updateAutoLockBeforeBlock(it) }
             )
 
             // Messages section
@@ -250,6 +271,51 @@ private fun formatTimerDisplay(minutes: Int, seconds: Int): String {
         minutes == 0 -> "${seconds}s"
         seconds == 0 -> "${minutes}m"
         else -> "${minutes}m ${seconds}s"
+    }
+}
+
+@Composable
+private fun BlockTimeSettingsCard(
+    autoLockEnabled: Boolean,
+    onAutoLockToggle: (Boolean) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = if (autoLockEnabled) MaterialTheme.colorScheme.primary
+                       else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Auto-lock 30 min before block",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "Profiles auto-lock before scheduled blocks. Once on, can only be turned off when no block is within 30 minutes.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Switch(
+                checked = autoLockEnabled,
+                onCheckedChange = onAutoLockToggle
+            )
+        }
     }
 }
 

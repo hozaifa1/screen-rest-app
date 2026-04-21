@@ -26,6 +26,8 @@ interface SettingsRepository {
     suspend fun addWhitelistApp(packageName: String)
     suspend fun removeWhitelistApp(packageName: String)
     suspend fun setWhitelistApps(packageNames: Set<String>)
+    fun getAutoLockBeforeBlock(): Flow<Boolean>
+    suspend fun setAutoLockBeforeBlock(enabled: Boolean)
 }
 
 @Singleton
@@ -75,5 +77,13 @@ class SettingsRepositoryImpl @Inject constructor(
     
     override suspend fun setWhitelistApps(packageNames: Set<String>) {
         settingsDataStore.setWhitelistApps(packageNames)
+    }
+    
+    override fun getAutoLockBeforeBlock(): Flow<Boolean> {
+        return settingsDataStore.autoLockBeforeBlock
+    }
+    
+    override suspend fun setAutoLockBeforeBlock(enabled: Boolean) {
+        settingsDataStore.setAutoLockBeforeBlock(enabled)
     }
 }

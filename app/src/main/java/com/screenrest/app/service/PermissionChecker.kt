@@ -107,6 +107,10 @@ class PermissionChecker @Inject constructor(
         }
     }
     
+    fun checkDeviceAdminPermission(): Boolean {
+        return com.screenrest.app.util.DeviceAdminHelper.isAdminActive(context)
+    }
+    
     fun getAllPermissionStatuses(): PermissionStatus {
         return PermissionStatus(
             usageStats = checkUsageStatsPermission(),
@@ -114,7 +118,8 @@ class PermissionChecker @Inject constructor(
             accessibility = checkAccessibilityPermission(),
             notification = checkNotificationPermission(),
             location = checkLocationPermission(),
-            backgroundLocation = checkBackgroundLocationPermission()
+            backgroundLocation = checkBackgroundLocationPermission(),
+            deviceAdmin = checkDeviceAdminPermission()
         )
     }
 }

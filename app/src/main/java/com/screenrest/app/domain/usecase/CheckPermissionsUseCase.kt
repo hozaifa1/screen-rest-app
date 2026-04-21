@@ -14,16 +14,16 @@ class CheckPermissionsUseCase @Inject constructor(
     }
     
     fun calculateEnforcementLevel(status: PermissionStatus): EnforcementLevel {
+        val hasCorePermissions = status.usageStats && status.overlay
+        val hasAccessibility = status.accessibility
+        val hasDeviceAdmin = status.deviceAdmin
+        
         return when {
-            status.usageStats && status.overlay -> {
-                EnforcementLevel.FULL
-            }
-            status.usageStats || status.overlay -> {
-                EnforcementLevel.BASIC
-            }
-            else -> {
-                EnforcementLevel.NONE
-            }
+            hasCorePermissions && hasAccessibility && hasDeviceAdmin -> EnforcementLevel.FULL
+            hasCorePermissions && (hasAccessibility || hasDeviceAdmin) -> EnforcementLevel.STANDARD
+            hasCorePermissions -> EnforcementLevel.BASIC
+            status.usageStats || status.overlay -> EnforcementLevel.BASIC
+            else -> EnforcementLevel.NONE
         }
     }
     

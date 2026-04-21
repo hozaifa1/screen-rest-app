@@ -96,6 +96,7 @@ fun CompleteStep(
             PermissionCheckItem(name = "Display Over Apps", isGranted = permissionStatus.overlay)
             PermissionCheckItem(name = "Notifications", isGranted = permissionStatus.notification)
             PermissionCheckItem(name = "Accessibility", isGranted = permissionStatus.accessibility)
+            PermissionCheckItem(name = "Device Admin", isGranted = permissionStatus.deviceAdmin)
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -103,8 +104,7 @@ fun CompleteStep(
         Button(
             onClick = onComplete,
             modifier = Modifier.fillMaxWidth().height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            enabled = permissionStatus.usageStats && permissionStatus.overlay
+            shape = RoundedCornerShape(12.dp)
         ) {
             Text("Start Using ScreenRest", style = MaterialTheme.typography.labelLarge)
         }
@@ -112,9 +112,9 @@ fun CompleteStep(
         if (!permissionStatus.usageStats || !permissionStatus.overlay) {
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Grant required permissions to continue",
+                text = "Some features may be limited without all permissions. You can grant them later from Settings.",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
         }

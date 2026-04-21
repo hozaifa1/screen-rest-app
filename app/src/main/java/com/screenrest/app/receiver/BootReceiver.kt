@@ -3,7 +3,9 @@ package com.screenrest.app.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.core.content.ContextCompat
 import com.screenrest.app.data.local.datastore.SettingsDataStore
+import com.screenrest.app.service.BlockTimeSchedulerService
 import com.screenrest.app.service.ServiceController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +28,12 @@ class BootReceiver : BroadcastReceiver() {
                 
                 if (onboardingComplete && trackingEnabled) {
                     ServiceController.startTracking(context)
+                }
+                
+                // Always start the block time scheduler if onboarding is complete
+                if (onboardingComplete) {
+                    val schedulerIntent = Intent(context, BlockTimeSchedulerService::class.java)
+                    ContextCompat.startForegroundService(context, schedulerIntent)
                 }
             }
         }
