@@ -76,6 +76,12 @@ class BlockAccessibilityService : AccessibilityService() {
                 AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                     // 1. Collapse notification shade / block system UI
                     if (packageName == "com.android.systemui") {
+                        // Allow notification shade during active/incoming calls so the user
+                        // can answer or interact with the call notification.
+                        if (BlockOverlayService.isCallActive) {
+                            Log.d(TAG, "System UI during active call — allowing")
+                            return
+                        }
                         Log.d(TAG, "System UI detected during block - closing")
                         performGlobalAction(GLOBAL_ACTION_BACK)
                         if (Build.VERSION.SDK_INT >= 31) {

@@ -43,6 +43,7 @@ class SettingsDataStore @Inject constructor(
         val LAST_BREAK_TIMESTAMP = longPreferencesKey("last_break_timestamp")
         val WHITELIST_APPS = stringSetPreferencesKey("whitelist_apps")
         val BT_AUTO_LOCK_BEFORE = booleanPreferencesKey("bt_auto_lock_before_block")
+        val SHOW_TIMER_COUNTDOWN = booleanPreferencesKey("show_timer_countdown")
     }
 
     val breakConfig: Flow<BreakConfig> = context.dataStore.data.map { preferences ->
@@ -152,6 +153,16 @@ class SettingsDataStore @Inject constructor(
     suspend fun setAutoLockBeforeBlock(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.BT_AUTO_LOCK_BEFORE] = enabled
+        }
+    }
+
+    val showTimerCountdown: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.SHOW_TIMER_COUNTDOWN] ?: true
+    }
+
+    suspend fun setShowTimerCountdown(show: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SHOW_TIMER_COUNTDOWN] = show
         }
     }
 }

@@ -39,13 +39,16 @@ class SettingsViewModel @Inject constructor(
                 settingsRepository.getAutoLockBeforeBlock()
             ) { config, theme, color, whitelist, autoLock ->
                 SettingsData(config, theme, color, whitelist, autoLock)
+            }.combine(settingsRepository.showTimerCountdown) { data, show ->
+                data.copy(showTimerCountdown = show)
             }.collect { data ->
                 _uiState.value = _uiState.value.copy(
                     breakConfig = data.config,
                     themeMode = data.theme,
                     themeColor = data.color,
                     whitelistApps = data.whitelist,
-                    autoLockBeforeBlock = data.autoLock
+                    autoLockBeforeBlock = data.autoLock,
+                    showTimerCountdown = data.showTimerCountdown
                 )
             }
         }
@@ -56,7 +59,8 @@ class SettingsViewModel @Inject constructor(
         val theme: ThemeMode,
         val color: ThemeColor,
         val whitelist: Set<String>,
-        val autoLock: Boolean
+        val autoLock: Boolean,
+        val showTimerCountdown: Boolean = true
     )
     
     fun updateTimers(thresholdSeconds: Int, durationSeconds: Int) {
@@ -151,6 +155,12 @@ class SettingsViewModel @Inject constructor(
     fun dismissAutoLockWarning() {
         _uiState.value = _uiState.value.copy(showAutoLockWarning = false)
     }
+
+    fun updateShowTimerCountdown(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowTimerCountdown(show)
+        }
+    }
 }
 
 data class SettingsUiState(
@@ -161,5 +171,6 @@ data class SettingsUiState(
     val showLongDurationWarning: Boolean = false,
     val showShortThresholdWarning: Boolean = false,
     val autoLockBeforeBlock: Boolean = false,
-    val showAutoLockWarning: Boolean = false
+    val showAutoLockWarning: Boolean = false,
+    val showTimerCountdown: Boolean = true
 )
