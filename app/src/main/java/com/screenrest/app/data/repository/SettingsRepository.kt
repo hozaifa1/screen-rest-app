@@ -28,6 +28,8 @@ interface SettingsRepository {
     suspend fun setWhitelistApps(packageNames: Set<String>)
     fun getAutoLockBeforeBlock(): Flow<Boolean>
     suspend fun setAutoLockBeforeBlock(enabled: Boolean)
+    val showTimerCountdown: Flow<Boolean>
+    suspend fun setShowTimerCountdown(show: Boolean)
 }
 
 @Singleton
@@ -82,8 +84,14 @@ class SettingsRepositoryImpl @Inject constructor(
     override fun getAutoLockBeforeBlock(): Flow<Boolean> {
         return settingsDataStore.autoLockBeforeBlock
     }
-    
+
     override suspend fun setAutoLockBeforeBlock(enabled: Boolean) {
         settingsDataStore.setAutoLockBeforeBlock(enabled)
+    }
+
+    override val showTimerCountdown: Flow<Boolean> = settingsDataStore.showTimerCountdown
+
+    override suspend fun setShowTimerCountdown(show: Boolean) {
+        settingsDataStore.setShowTimerCountdown(show)
     }
 }

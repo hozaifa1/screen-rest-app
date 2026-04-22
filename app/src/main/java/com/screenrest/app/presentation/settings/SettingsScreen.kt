@@ -155,7 +155,9 @@ fun SettingsScreen(
             SectionHeader("Block Phone Use")
             BlockTimeSettingsCard(
                 autoLockEnabled = uiState.autoLockBeforeBlock,
-                onAutoLockToggle = { viewModel.updateAutoLockBeforeBlock(it) }
+                onAutoLockToggle = { viewModel.updateAutoLockBeforeBlock(it) },
+                showTimerCountdown = uiState.showTimerCountdown,
+                onShowTimerCountdownToggle = { viewModel.updateShowTimerCountdown(it) }
             )
 
             // Messages section
@@ -277,44 +279,74 @@ private fun formatTimerDisplay(minutes: Int, seconds: Int): String {
 @Composable
 private fun BlockTimeSettingsCard(
     autoLockEnabled: Boolean,
-    onAutoLockToggle: (Boolean) -> Unit
+    onAutoLockToggle: (Boolean) -> Unit,
+    showTimerCountdown: Boolean,
+    onShowTimerCountdownToggle: (Boolean) -> Unit
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Lock,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = if (autoLockEnabled) MaterialTheme.colorScheme.primary
-                       else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Auto-lock 30 min before block",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = if (autoLockEnabled) MaterialTheme.colorScheme.primary
+                           else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    text = "Profiles auto-lock before scheduled blocks. Once on, can only be turned off when no block is within 30 minutes.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Auto-lock 30 min before block",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "Profiles auto-lock before scheduled blocks. Once on, can only be turned off when no block is within 30 minutes.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Switch(
+                    checked = autoLockEnabled,
+                    onCheckedChange = onAutoLockToggle
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Switch(
-                checked = autoLockEnabled,
-                onCheckedChange = onAutoLockToggle
-            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), thickness = 0.5.dp)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Show countdown timer",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = if (showTimerCountdown) "Timer visible on break screens" else "Timer hidden — clean reminder only",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Switch(
+                    checked = showTimerCountdown,
+                    onCheckedChange = onShowTimerCountdownToggle
+                )
+            }
         }
     }
 }
