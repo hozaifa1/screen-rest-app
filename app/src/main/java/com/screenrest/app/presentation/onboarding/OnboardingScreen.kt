@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun OnboardingScreen(
@@ -14,9 +15,17 @@ fun OnboardingScreen(
     onComplete: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
-    LaunchedEffect(Unit) {
-        viewModel.refreshPermissions()
+
+    // Poll permission state while on any permission step so that granting a
+    // permission in the system Settings app is auto-detected and the user is
+    // moved forward without having to tap a manual "I've granted it" button.
+    LaunchedEffect(uiState.currentStep) {
+        if (uiState.currentStep in 1..5) {
+            while (true) {
+                viewModel.refreshPermissions()
+                delay(400L)
+            }
+        }
     }
     
     Scaffold { paddingValues ->

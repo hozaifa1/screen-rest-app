@@ -331,12 +331,15 @@ private fun BlockTimeSettingsCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Show countdown timer",
+                        text = "Show countdown on phone blocks",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = if (showTimerCountdown) "Timer visible on break screens" else "Timer hidden — clean reminder only",
+                        text = if (showTimerCountdown)
+                            "Timer visible on phone block and quick block screens. Regular interval breaks always show the timer."
+                        else
+                            "Timer hidden on phone block and quick block screens. Regular interval breaks are unaffected.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

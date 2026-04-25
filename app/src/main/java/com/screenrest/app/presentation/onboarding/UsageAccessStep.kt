@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +24,12 @@ fun UsageAccessStep(
     onRefresh: () -> Unit
 ) {
     val context = LocalContext.current
+
+    // Auto-advance the moment the permission is granted (detected by polling
+    // in OnboardingScreen) so the user doesn't need a manual confirmation tap.
+    LaunchedEffect(isGranted) {
+        if (isGranted) onNext()
+    }
 
     Column(
         modifier = Modifier
@@ -68,16 +75,6 @@ fun UsageAccessStep(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Grant Permission", style = MaterialTheme.typography.labelLarge)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FilledTonalButton(
-                onClick = { onRefresh(); if (isGranted) onNext() },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("I've Granted It", style = MaterialTheme.typography.labelLarge)
             }
         } else {
             Button(

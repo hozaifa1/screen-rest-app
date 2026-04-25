@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,6 +21,10 @@ fun OverlayStep(
     onRefresh: () -> Unit
 ) {
     val context = LocalContext.current
+
+    LaunchedEffect(isGranted) {
+        if (isGranted) onNext()
+    }
 
     Column(
         modifier = Modifier
@@ -65,16 +70,6 @@ fun OverlayStep(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Grant Permission", style = MaterialTheme.typography.labelLarge)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FilledTonalButton(
-                onClick = { onRefresh(); if (isGranted) onNext() },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("I've Granted It", style = MaterialTheme.typography.labelLarge)
             }
         } else {
             Button(
