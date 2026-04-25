@@ -23,12 +23,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,7 +33,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -119,11 +114,10 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
     private var currentThemeColor by mutableStateOf(ThemeColor.TEAL)
     private var originalThemeColor: ThemeColor = ThemeColor.TEAL
 
-    // Feature states — observed by the Compose content lambda
     private var showTimerCountdown by mutableStateOf(true)
     private var hasBeenExtended by mutableStateOf(false)
 
-    // Phone mode — not Compose state, managed imperatively
+    // Phone mode — entered automatically on incoming/active call only, no user button
     private var isPhoneModeActive = false
 
     private var currentBlockDurationSeconds: Int = -1
@@ -155,7 +149,7 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
         }
     }
 
-    // ── Phone state receiver ─────────────────────────────────────────────────
+    // ── Phone state receiver — auto-enters phone mode on real calls only ──────
 
     private val phoneStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -164,12 +158,10 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
                 TelephonyManager.EXTRA_STATE_RINGING,
                 TelephonyManager.EXTRA_STATE_OFFHOOK -> {
                     isCallActive = true
-                    // Cancel the auto-exit timeout since a real call is in progress
                     phoneModeTimeoutHandler.removeCallbacks(phoneModeTimeoutRunnable)
                     if (!isPhoneModeActive) enterPhoneMode()
                 }
                 TelephonyManager.EXTRA_STATE_IDLE -> {
-                    // Brief delay so the call UI can close gracefully before overlay returns
                     Handler(Looper.getMainLooper()).postDelayed({
                         isCallActive = false
                         if (isPhoneModeActive) exitPhoneMode()
@@ -179,7 +171,7 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
         }
     }
 
-    /** Auto-exit phone mode after 5 minutes if no call was placed. */
+    /** Safety net: exit phone mode after 10 min in case IDLE is never received. */
     private val phoneModeTimeoutRunnable = Runnable {
         Log.d(TAG, "Phone mode timeout — returning to block screen")
         exitPhoneMode()
@@ -208,7 +200,6 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
             registerReceiver(screenReceiver, screenFilter)
         }
 
-        // Register phone-state receiver for call detection (gracefully skipped if unavailable)
         try {
             val phoneFilter = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -242,10 +233,8 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
                 remainingSeconds = duration
                 hasBeenExtended = false
 
-                // Exit phone mode if a previous block left it active
                 if (isPhoneModeActive) exitPhoneMode()
 
-                // Load theme settings
                 try {
                     currentThemeMode = settingsRepository.themeMode.first()
                     originalThemeColor = settingsRepository.themeColor.first()
@@ -254,14 +243,12 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
                     Log.e(TAG, "Error loading theme", e)
                 }
 
-                // Load timer-visibility setting
                 try {
                     showTimerCountdown = settingsRepository.showTimerCountdown.first()
                 } catch (e: Exception) {
                     Log.e(TAG, "Error loading timer visibility setting", e)
                 }
 
-                // Load display message
                 try {
                     currentDisplayMessage = if (blockMode == MODE_SCHEDULED && incomingCustomMessage != null) {
                         DisplayMessage.IslamicReminder(incomingCustomMessage)
@@ -316,8 +303,7 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
                             showTimerCountdown = showTimerCountdown,
                             hasBeenExtended = hasBeenExtended,
                             onExtendTime = { extendTimeByMinutes(30) },
-                            onNextMessage = { loadNextMessage() },
-                            onOpenPhone = { handleOpenPhoneButton() }
+                            onNextMessage = { loadNextMessage() }
                         )
                     }
                 }
@@ -470,7 +456,6 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
             Log.d(TAG, "Countdown started: $durationSeconds seconds, mode=$currentBlockMode")
 
             if (currentBlockMode == MODE_SCHEDULED && scheduledEndTimeMs > 0L) {
-                // Scheduled/quick block: use absolute end time; counts down even with screen off
                 while (isCountdownRunning) {
                     val now = System.currentTimeMillis()
                     val remaining = ((scheduledEndTimeMs - now) / 1000).toInt()
@@ -479,7 +464,6 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
                     delay(1000)
                 }
             } else {
-                // Usage-based block: pause when screen is off
                 while (remainingSeconds > 0 && isCountdownRunning) {
                     delay(1000)
                     if (isScreenOn) {
@@ -516,7 +500,6 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
         if (currentBlockMode == MODE_SCHEDULED && scheduledEndTimeMs > 0L) {
             scheduledEndTimeMs += additionalSeconds.toLong() * 1000
         }
-        // Always bump remainingSeconds for immediate UI feedback
         remainingSeconds += additionalSeconds
         hasBeenExtended = true
         Log.d(TAG, "Extended block by $minutes min; new remaining=$remainingSeconds, newEndMs=$scheduledEndTimeMs")
@@ -536,32 +519,15 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
         }
     }
 
-    // ── Feature: Phone / call mode ────────────────────────────────────────────
-
-    private fun handleOpenPhoneButton() {
-        enterPhoneMode()
-        try {
-            val dialIntent = Intent(Intent.ACTION_DIAL).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            startActivity(dialIntent)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error opening phone app", e)
-            // If the dialer couldn't open, immediately exit phone mode
-            exitPhoneMode()
-        }
-    }
+    // ── Phone mode — entered automatically on incoming/active call ────────────
 
     private fun enterPhoneMode() {
         if (isPhoneModeActive) return
         isPhoneModeActive = true
+        Log.d(TAG, "Entering phone mode (incoming call)")
 
-        Log.d(TAG, "Entering phone mode")
-
-        // Stop blocking the notification shade
         stopCollapsingPanels()
 
-        // Remove the status bar touch guard so the shade can be pulled down
         try {
             statusBarGuardView?.let { guard ->
                 windowManager?.removeView(guard)
@@ -571,7 +537,6 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
             Log.e(TAG, "Error removing status bar guard", e)
         }
 
-        // Hide the overlay and make it non-interactive
         try {
             overlayView?.visibility = View.GONE
             overlayParams?.let { p ->
@@ -584,20 +549,17 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
             Log.e(TAG, "Error hiding overlay for phone mode", e)
         }
 
-        // Auto-restore the overlay after 5 minutes if no call was placed
-        phoneModeTimeoutHandler.postDelayed(phoneModeTimeoutRunnable, 5 * 60 * 1000L)
+        // Safety net: restore after 10 min in case IDLE broadcast never fires
+        phoneModeTimeoutHandler.postDelayed(phoneModeTimeoutRunnable, 10 * 60 * 1000L)
     }
 
     private fun exitPhoneMode() {
         if (!isPhoneModeActive) return
         isPhoneModeActive = false
         isCallActive = false
-
         phoneModeTimeoutHandler.removeCallbacks(phoneModeTimeoutRunnable)
-
         Log.d(TAG, "Exiting phone mode")
 
-        // Restore the overlay
         try {
             overlayView?.visibility = View.VISIBLE
             overlayParams?.let { p ->
@@ -610,10 +572,7 @@ class BlockOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, Save
             Log.e(TAG, "Error restoring overlay after phone mode", e)
         }
 
-        // Re-add the status bar guard
         addStatusBarGuard()
-
-        // Resume blocking the notification shade
         startCollapsingPanels()
     }
 
@@ -685,8 +644,7 @@ private fun BlockOverlayContent(
     showTimerCountdown: Boolean = true,
     hasBeenExtended: Boolean = false,
     onExtendTime: () -> Unit = {},
-    onNextMessage: () -> Unit = {},
-    onOpenPhone: () -> Unit = {}
+    onNextMessage: () -> Unit = {}
 ) {
     val minutes = remainingSeconds / 60
     val seconds = remainingSeconds % 60
@@ -702,9 +660,8 @@ private fun BlockOverlayContent(
     val buttonBorderColor = if (isDarkTheme) palette.primaryLight.copy(alpha = 0.5f) else palette.primaryVariant.copy(alpha = 0.4f)
     val buttonTextColor = if (isDarkTheme) palette.primaryLight else palette.primaryVariant
 
-    // Timer visibility: the "hide countdown" setting only applies to scheduled / quick
-    // block sessions. Regular interval breaks always show the countdown so the user
-    // knows when the short break will end.
+    // "Hide countdown" setting applies only to scheduled/quick blocks.
+    // Regular interval breaks always show the timer.
     val timerVisible = !isScheduledBlock || showTimerCountdown
 
     Box(
@@ -723,7 +680,7 @@ private fun BlockOverlayContent(
                 .padding(horizontal = 32.dp, vertical = 48.dp)
         ) {
 
-            // ── Timer (conditionally shown) ───────────────────────────────
+            // ── Timer ─────────────────────────────────────────────────────
             if (timerVisible) {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
@@ -830,12 +787,12 @@ private fun BlockOverlayContent(
             }
         }
 
-        // ── Next message: small text button in the top-right corner ───────
+        // ── Next message: small text button at the bottom center ──────────
         TextButton(
             onClick = onNextMessage,
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 12.dp, end = 12.dp),
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 20.dp),
             colors = ButtonDefaults.textButtonColors(contentColor = buttonTextColor.copy(alpha = 0.75f))
         ) {
             Text(
@@ -843,24 +800,6 @@ private fun BlockOverlayContent(
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium
             )
-        }
-
-        // ── Phone: tiny icon at the bottom-center, scheduled blocks only ──
-        if (isScheduledBlock) {
-            IconButton(
-                onClick = onOpenPhone,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 20.dp)
-                    .size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Phone,
-                    contentDescription = "Phone",
-                    tint = buttonTextColor.copy(alpha = 0.6f),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
         }
     }
 }
