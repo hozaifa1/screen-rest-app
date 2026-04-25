@@ -23,11 +23,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -697,6 +702,11 @@ private fun BlockOverlayContent(
     val buttonBorderColor = if (isDarkTheme) palette.primaryLight.copy(alpha = 0.5f) else palette.primaryVariant.copy(alpha = 0.4f)
     val buttonTextColor = if (isDarkTheme) palette.primaryLight else palette.primaryVariant
 
+    // Timer visibility: the "hide countdown" setting only applies to scheduled / quick
+    // block sessions. Regular interval breaks always show the countdown so the user
+    // knows when the short break will end.
+    val timerVisible = !isScheduledBlock || showTimerCountdown
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -714,7 +724,7 @@ private fun BlockOverlayContent(
         ) {
 
             // ── Timer (conditionally shown) ───────────────────────────────
-            if (showTimerCountdown) {
+            if (timerVisible) {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = timerColor.copy(alpha = 0.15f)
@@ -786,66 +796,18 @@ private fun BlockOverlayContent(
                 null -> { /* nothing */ }
             }
 
-            // ── Action buttons ────────────────────────────────────────────
-            Spacer(modifier = Modifier.height(40.dp))
-            HorizontalDivider(
-                modifier = Modifier.fillMaxWidth(0.3f),
-                color = dividerColor.copy(alpha = 0.4f),
-                thickness = 0.5.dp
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Phone / calls button
-                OutlinedButton(
-                    onClick = onOpenPhone,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = buttonTextColor),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, buttonBorderColor)
-                ) {
-                    Text(
-                        text = "Phone",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1
-                    )
-                }
-
-                // Next message button
-                OutlinedButton(
-                    onClick = onNextMessage,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = buttonTextColor),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, buttonBorderColor)
-                ) {
-                    Text(
-                        text = "Next",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1
-                    )
-                }
-            }
-
             // Extend button — only for scheduled/quick blocks, only once
             if (isScheduledBlock && !hasBeenExtended) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(32.dp))
                 OutlinedButton(
                     onClick = onExtendTime,
-                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = buttonTextColor),
                     border = androidx.compose.foundation.BorderStroke(1.dp, buttonBorderColor)
                 ) {
                     Text(
                         text = "+ Extend 30 min",
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -853,7 +815,7 @@ private fun BlockOverlayContent(
 
             // Tamper warning — only shown on scheduled profile blocks
             if (isScheduledBlock) {
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(32.dp))
                 Text(
                     text = "Disabling \"Display over other apps\" will lock your device until this block ends.",
                     fontSize = 11.sp,
@@ -864,6 +826,39 @@ private fun BlockOverlayContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
+                )
+            }
+        }
+
+        // ── Next message: small text button in the top-right corner ───────
+        TextButton(
+            onClick = onNextMessage,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 12.dp, end = 12.dp),
+            colors = ButtonDefaults.textButtonColors(contentColor = buttonTextColor.copy(alpha = 0.75f))
+        ) {
+            Text(
+                text = "Next",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        // ── Phone: tiny icon at the bottom-center, scheduled blocks only ──
+        if (isScheduledBlock) {
+            IconButton(
+                onClick = onOpenPhone,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 20.dp)
+                    .size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Phone,
+                    contentDescription = "Phone",
+                    tint = buttonTextColor.copy(alpha = 0.6f),
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
